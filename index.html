@@ -50,7 +50,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 
 /* ══ SCREENS ══ */
 .screen{display:none;}
-.screen.active{display:block;position:fixed;top:52px;left:0;right:0;bottom:0;overflow:hidden;}
+.screen.active{display:block;position:fixed;left:0;right:0;bottom:0;overflow:hidden;}
 
 /* ══ SPLASH ══ */
 .splash{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle at 30% 40%,rgba(124,106,247,.06) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(56,217,192,.04) 0%,transparent 50%);}
@@ -2190,6 +2190,23 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
 
 // ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
 init();
+
+// Topbar yüksekliğini ölç ve screen'leri dinamik yerleştir
+function fixScreenTop() {
+  const tb = document.querySelector('.topbar');
+  if(!tb) return;
+  const h = tb.getBoundingClientRect().height;
+  const style = document.createElement('style');
+  style.textContent = `.screen.active { top: ${h}px !important; }`;
+  document.head.appendChild(style);
+}
+// Font yüklendikten sonra ölç
+if(document.fonts) {
+  document.fonts.ready.then(fixScreenTop);
+} else {
+  setTimeout(fixScreenTop, 500);
+}
+window.addEventListener('resize', fixScreenTop);
 </script>
 
 </body>
