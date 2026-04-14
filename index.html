@@ -50,7 +50,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 
 /* ══ SCREENS ══ */
 .screen{display:none;flex:1;min-height:0;overflow:hidden;}
-.screen.active{display:flex;flex-direction:column;}
+.screen.active{display:flex;flex-direction:column;width:100%;height:100%;}
 
 /* ══ SPLASH ══ */
 .splash{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle at 30% 40%,rgba(124,106,247,.06) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(56,217,192,.04) 0%,transparent 50%);}
@@ -338,7 +338,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     <button class="btn btn-primary" onclick="N('Yayınlandı ✓')">▶ Yayınla</button>
   </div>
 </div>
-<div style="flex:1;display:flex;min-height:0;overflow:hidden;">
+<div style="flex:1;display:flex;min-height:0;overflow:hidden;height:100%;">
 
 <!-- SCREEN 0: SPLASH -->
 <div class="screen active" id="s0">
@@ -570,20 +570,19 @@ let openMods = {};
 
 // ══ NAVIGATION ══
 function goTo(n) {
-  document.querySelectorAll('.screen').forEach((s,i)=>{ s.classList.toggle('active', i===n); });
-  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9'].forEach((id,i)=>{const el=document.getElementById(id);if(el){el.classList.toggle('active',i===n);el.classList.toggle('done',i<n);}});
-  document.querySelectorAll('.tb-step').forEach((t,i)=>{
-    t.classList.remove('active','done');
-    if(i===n) t.classList.add('active');
-    else if(i<n) t.classList.add('done');
+  for(let i=0;i<=9;i++){
+    const s=document.getElementById('s'+i);
+    if(s) s.classList.toggle('active', i===n);
+  }
+  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.classList.toggle('active',i===n);
+      el.classList.toggle('done',i<n);
+    }
   });
   currentScreen = n;
-  if(n===2) {
-    setTimeout(() => {
-      if(nodes.length===0) addDefaultFlow();
-      else renderAll2();
-    }, 150);
-  }
+  if(n===2) { setTimeout(() => { if(nodes.length===0) addDefaultFlow(); else renderAll2(); }, 150); }
   if(n===3) renderTmpl();
   if(n===4) autoGenDB();
   if(n===5) initAF();
