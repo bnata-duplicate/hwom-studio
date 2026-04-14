@@ -12,12 +12,13 @@
   --tx:#f0f1f5;--mt:#5c6478;--mt2:#8892a4;
   --ac:#7c6af7;--ac2:#a99fff;
   --gold:#f0c060;--gn:#3ecf8e;--rd:#f26b6b;--or:#f5a623;--tl:#38d9c0;--pk:#e879f9;
+  --topbar-h:52px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
 
 /* ══ TOPBAR ══ */
-.topbar{min-height:52px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;flex-shrink:0;gap:0;flex-wrap:nowrap;}
+.topbar{height:var(--topbar-h);max-height:var(--topbar-h);background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;flex-shrink:0;overflow:hidden;flex-wrap:nowrap;}
 .tb-brand{display:flex;align-items:center;gap:8px;margin-right:12px;border-right:1px solid var(--bd);padding-right:12px;flex-shrink:0;}
 .tb-logo{font-size:16px;font-weight:900;letter-spacing:-.5px;}
 .tb-logo span{color:var(--ac2);}
@@ -50,7 +51,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 
 /* ══ SCREENS ══ */
 .screen{display:none;}
-.screen.active{display:block;position:fixed;left:0;right:0;bottom:0;overflow:hidden;}
+.screen.active{display:flex;flex-direction:column;position:fixed;top:var(--topbar-h);left:0;right:0;bottom:0;overflow:hidden;}
 
 /* ══ SPLASH ══ */
 .splash{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle at 30% 40%,rgba(124,106,247,.06) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(56,217,192,.04) 0%,transparent 50%);}
@@ -2190,23 +2191,6 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
 
 // ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
 init();
-
-// Topbar yüksekliğini ölç ve screen'leri dinamik yerleştir
-function fixScreenTop() {
-  const tb = document.querySelector('.topbar');
-  if(!tb) return;
-  const h = tb.getBoundingClientRect().height;
-  const style = document.createElement('style');
-  style.textContent = `.screen.active { top: ${h}px !important; }`;
-  document.head.appendChild(style);
-}
-// Font yüklendikten sonra ölç
-if(document.fonts) {
-  document.fonts.ready.then(fixScreenTop);
-} else {
-  setTimeout(fixScreenTop, 500);
-}
-window.addEventListener('resize', fixScreenTop);
 </script>
 
 </body>
