@@ -14,7 +14,7 @@
   --gold:#f0c060;--gn:#3ecf8e;--rd:#f26b6b;--or:#f5a623;--tl:#38d9c0;--pk:#e879f9;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
+body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
 
 /* ══ TOPBAR ══ */
 .topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 18px;flex-shrink:0;gap:0;}
@@ -47,8 +47,8 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 .btn-green{background:rgba(62,207,142,.15);border:1px solid rgba(62,207,142,.3);color:var(--gn);}
 
 /* ══ SCREENS ══ */
-.screen{display:none;flex:1;overflow:hidden;height:calc(100vh - 52px);}
-.screen.active{display:flex;}
+.screen{display:none;flex:1;overflow:hidden;min-height:0;width:100%;}
+.screen.active{display:flex;flex-direction:column;}
 
 /* ══ SPLASH ══ */
 .splash{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(circle at 30% 40%,rgba(124,106,247,.06) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(56,217,192,.04) 0%,transparent 50%);}
@@ -67,7 +67,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 .splash-cta{display:flex;gap:10px;justify-content:center;}
 
 /* ══ SHARED ══ */
-.panel-layout{flex:1;display:flex;overflow:hidden;height:100%;}
+.panel-layout{flex:1;display:flex;overflow:hidden;height:100%;min-height:0;}
 .lp{width:210px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
 .lp-sec{padding:11px 13px;border-bottom:1px solid var(--bd);}
 .lp-lbl{font-family:'Fira Code',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mt);margin-bottom:9px;}
@@ -345,7 +345,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     <button class="btn btn-primary" onclick="N('Proje yayınlandı → Canlı sistem ✓')">▶ Yayınla</button>
   </div>
 </div>
-<div style="flex:1;display:flex;overflow:hidden;position:relative;">
+<div style="flex:1;display:flex;overflow:hidden;min-height:0;position:relative;">
 
 <!-- SCREEN 0: SPLASH -->
 <div class="screen active" id="s0">
@@ -608,8 +608,8 @@ function loadDemo() {
 // ══ CLOCK ══
 setInterval(()=>{
   const t = new Date().toLocaleTimeString('tr-TR');
-  document.getElementById('clockDisplay').textContent = t;
-  document.getElementById('dbClock4').textContent = t;
+  const c1=document.getElementById('clockDisplay'); if(c1) c1.textContent = t;
+  const c2=document.getElementById('dbClock4'); if(c2) c2.textContent = t;
 },1000);
 
 // ══ HWOM TYPES ══
@@ -1093,14 +1093,14 @@ function init(){
   initS1();
   initS2();
   initS4();
-  setInterval(()=>{const t=new Date().toLocaleTimeString('tr-TR');document.getElementById('clockDisplay').textContent=t;document.getElementById('dbClock4').textContent=t;},1000);
+  setInterval(()=>{const t=new Date().toLocaleTimeString('tr-TR');const c1=document.getElementById('clockDisplay');const c2=document.getElementById('dbClock4');if(c1)c1.textContent=t;if(c2)c2.textContent=t;},1000);
 }
 init();
 </script>
 
 <!-- ═══ M05 AGENT FACTORY ═══ -->
 <div class="screen" id="s5">
-  <div style="display:flex;height:100%;overflow:hidden;">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
       <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Ajanlarım</div>
       <div id="af-list" style="display:flex;flex-direction:column;gap:6px;"></div>
@@ -1117,7 +1117,7 @@ init();
 
 <!-- ═══ M06 AGENT TRAINING ═══ -->
 <div class="screen" id="s6">
-  <div style="display:flex;height:100%;overflow:hidden;">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
       <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Eğitim Paneli</div>
       <div id="at-list" style="display:flex;flex-direction:column;gap:6px;"></div>
@@ -1128,7 +1128,7 @@ init();
 
 <!-- ═══ M07 DASHBOARD FACTORY ═══ -->
 <div class="screen" id="s7">
-  <div style="display:flex;height:100%;overflow:hidden;">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
       <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Dashboard'larım</div>
       <div id="df-list" style="display:flex;flex-direction:column;gap:6px;"></div>
@@ -1140,7 +1140,7 @@ init();
 
 <!-- ═══ M08 OKR & QX TRACKER ═══ -->
 <div class="screen" id="s8">
-  <div style="display:flex;height:100%;overflow:hidden;">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
       <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">OKR Listesi</div>
       <div id="okr-list" style="display:flex;flex-direction:column;gap:6px;"></div>
@@ -1156,7 +1156,7 @@ init();
 
 <!-- ═══ M09 REPORT ENGINE ═══ -->
 <div class="screen" id="s9">
-  <div style="display:flex;height:100%;overflow:hidden;">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
       <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Rapor Şablonları</div>
       <div id="re-list" style="display:flex;flex-direction:column;gap:6px;"></div>
