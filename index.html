@@ -1097,7 +1097,7 @@ function init(){
   initS4();
   setInterval(()=>{const t=new Date().toLocaleTimeString('tr-TR');const c1=document.getElementById('clockDisplay');const c2=document.getElementById('dbClock4');if(c1)c1.textContent=t;if(c2)c2.textContent=t;},1000);
 }
-init();
+// init() will be called after all scripts load
 </script>
 
 <!-- ═══ M05 AGENT FACTORY ═══ -->
@@ -2198,14 +2198,8 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
   if(btnsEl){btnsEl.style.display='flex';}
 }
 
-// ═══ INIT GÜNCELLEME ═══
-const _origInit = init;
-function init() {
-  _origInit();
-  initAF();
-  initAT();
-  initDF();
-}
+// ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
+init();
 </script>
 
 </body>
