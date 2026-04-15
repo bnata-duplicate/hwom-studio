@@ -2591,30 +2591,32 @@ async function qosCapaEkle(bulguId) {
     qosGit('capa');
   }
 }
+
+// ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
+async function başlat() {
   init();
-  // Supabase'den canlı veri yükle
-  await isletmeYukle();
-  if(AKTIF_ISLETME) {
-    // Topbar'da işletme adını göster
-    const brand = document.querySelector('.tb-tagline');
-    if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
-    // OKR ve QX verilerini güncelle
-    if(AKTIF_QX) {
-      // QX_LAYERS'ı canlı veriyle güncelle
-      QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
-      QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
-      QX_LAYERS[2].skor = AKTIF_QX.ox_skor || QX_LAYERS[2].skor;
-      QX_LAYERS[3].skor = AKTIF_QX.bx_skor || QX_LAYERS[3].skor;
-    }
-    // OKR verilerini canlı yükle
-    if(AKTIF_OKRLER.length > 0) {
-      for(let i=0;i<Math.min(AKTIF_OKRLER.length, OKR_DATA.length);i++) {
-        OKR_DATA[i].objective = AKTIF_OKRLER[i].objective || OKR_DATA[i].objective;
-        OKR_DATA[i].owner = AKTIF_OKRLER[i].sahip || OKR_DATA[i].owner;
-        OKR_DATA[i].qxLayer = AKTIF_OKRLER[i].x_layer || OKR_DATA[i].qxLayer;
+  try {
+    await isletmeYukle();
+    if(AKTIF_ISLETME) {
+      const brand = document.querySelector('.tb-tagline');
+      if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
+      if(AKTIF_QX) {
+        QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
+        QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
+        QX_LAYERS[2].skor = AKTIF_QX.ox_skor || QX_LAYERS[2].skor;
+        QX_LAYERS[3].skor = AKTIF_QX.bx_skor || QX_LAYERS[3].skor;
       }
+      if(AKTIF_OKRLER.length > 0) {
+        for(let i=0;i<Math.min(AKTIF_OKRLER.length, OKR_DATA.length);i++) {
+          OKR_DATA[i].objective = AKTIF_OKRLER[i].objective || OKR_DATA[i].objective;
+          OKR_DATA[i].owner = AKTIF_OKRLER[i].sahip || OKR_DATA[i].owner;
+          OKR_DATA[i].qxLayer = AKTIF_OKRLER[i].x_layer || OKR_DATA[i].qxLayer;
+        }
+      }
+      setTimeout(()=>N('✓ ' + AKTIF_ISLETME.isletme_adi + ' — Supabase aktif'), 500);
     }
-    N('✓ ' + AKTIF_ISLETME.isletme_adi + ' — Supabase bağlantısı aktif');
+  } catch(e) {
+    console.error('Başlat hatası:', e);
   }
 }
 başlat();
