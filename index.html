@@ -3,8 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HWOM Studio v2.0 — HumanSoft AI Atlas</title>
+<title>HWOM Studio v4.0 — HumanSoft AI Atlas</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fira+Code:wght@400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ═══ SUPABASE CONFIG ═══
+const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
+const SUPA_KEY = 'sb_publishable_pd5x1g6ZGu4KiNLaTmw_UA_JJCva0wn';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ═══ CDM HELPERS ═══
+async function dbGet(table, filters={}) {
+  let q = supa.from(table).select('*');
+  for(const [k,v] of Object.entries(filters)) q = q.eq(k,v);
+  const {data,error} = await q;
+  if(error){console.error('DB hata:',error);return [];}
+  return data||[];
+}
+async function dbInsert(table, row) {
+  const {data,error} = await supa.from(table).insert(row).select();
+  if(error){console.error('DB insert hata:',error);return null;}
+  return data?.[0]||null;
+}
+async function dbUpdate(table, id, updates) {
+  const {data,error} = await supa.from(table).update(updates).eq('id',id).select();
+  if(error){console.error('DB update hata:',error);return null;}
+  return data?.[0]||null;
+}
+async function dbDelete(table, id) {
+  const {error} = await supa.from(table).delete().eq('id',id);
+  if(error){console.error('DB delete hata:',error);return false;}
+  return true;
+}
+
+// Aktif işletme — başlangıçta Eliz yükle
+let AKTIF_ISLETME = null;
+let AKTIF_DEPARTMANLAR = [];
+let AKTIF_QX = null;
+let AKTIF_OKRLER = [];
+
+async function isletmeYukle() {
+  const isletmeler = await dbGet('isletme', {aktif:true});
+  if(isletmeler.length > 0) {
+    AKTIF_ISLETME = isletmeler[0];
+    AKTIF_DEPARTMANLAR = await dbGet('departman', {isletme_id: AKTIF_ISLETME.id});
+    const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
+    AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
+    AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
+    console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi, '| QX:', AKTIF_QX?.qx_hesaplanan);
+  }
+}
+</script>
 <style>
 :root{
   --bg:#0d0e12;--bg2:#13151b;--bg3:#1c1f28;
@@ -331,6 +380,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     <div class="tb-step" id="tab7" onclick="goTo(7)"><span class="step-n">7</span>Dash.Factory</div>
     <div class="tb-step" id="tab8" onclick="goTo(8)"><span class="step-n">8</span>OKR & QX</div>
     <div class="tb-step" id="tab9" onclick="goTo(9)"><span class="step-n">9</span>Reports</div>
+    <div class="tb-step" id="tab10" onclick="goTo(10)"><span class="step-n">10</span>Quality OS</div>
   </div>
   <div class="tb-right">
     <div class="live-pill"><div class="live-dot"></div><span id="clockDisplay">—</span></div>
@@ -571,11 +621,11 @@ let openMods = {};
 
 // ══ NAVIGATION ══
 function goTo(n) {
-  for(let i=0;i<=9;i++){
+  for(let i=0;i<=10;i++){
     const s=document.getElementById('s'+i);
     if(s) s.classList.toggle('active', i===n);
   }
-  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9'].forEach((id,i)=>{
+  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el){
       el.classList.toggle('active',i===n);
@@ -591,6 +641,7 @@ function goTo(n) {
   if(n===7) initDF();
   if(n===8) initOKR();
   if(n===9) initRE();
+  if(n===10) initQualityOS();
 }
 
 function loadDemo() {
@@ -1159,6 +1210,24 @@ function init(){
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:24px;" id="re-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M10 QUALITY OS ═══ -->
+<div class="screen" id="s10">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Quality OS</div>
+      <div id="qos-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Canlı Veri</div>
+        <div id="qos-db-status" style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;line-height:2;">
+          <span style="color:var(--gn)">● </span>Supabase bağlı<br>
+          <span id="qos-isletme-adi" style="color:var(--ac2)">Yükleniyor...</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="qos-main"></div>
   </div>
 </div>
 
@@ -2189,8 +2258,366 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
   if(btnsEl){btnsEl.style.display='flex';}
 }
 
-// ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
-init();
+// ═══ M10 QUALITY OS ═══
+const QOS_MENU = [
+  {id:'dashboard', label:'QX Dashboard', icon:'📊'},
+  {id:'denetim',   label:'Denetim Yönetimi', icon:'🔍'},
+  {id:'bulgu',     label:'Bulgular', icon:'⚠'},
+  {id:'capa',      label:'Düzeltici Faaliyet', icon:'🔧'},
+  {id:'iso',       label:'ISO Uyum Matrisi', icon:'📋'},
+  {id:'trend',     label:'QX Trend', icon:'📈'},
+];
+let qosAktifSayfa = 'dashboard';
+let qosDenetimler = [];
+let qosBulgular = [];
+let qosCapalar = [];
+
+function initQualityOS() {
+  renderQOSMenu();
+  renderQOSSayfa(qosAktifSayfa);
+  // Supabase'den veri yükle
+  if(AKTIF_ISLETME) {
+    const el = document.getElementById('qos-isletme-adi');
+    if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
+    yukleDenetimler();
+  }
+}
+
+async function yukleDenetimler() {
+  if(!AKTIF_ISLETME) return;
+  qosDenetimler = await dbGet('denetim', {isletme_id: AKTIF_ISLETME.id});
+  if(qosDenetimler.length > 0) {
+    const ids = qosDenetimler.map(d=>d.id);
+    const {data:bulgular} = await supa.from('bulgu').select('*').in('denetim_id', ids);
+    qosBulgular = bulgular||[];
+    if(qosBulgular.length > 0) {
+      const bids = qosBulgular.map(b=>b.id);
+      const {data:capalar} = await supa.from('capa').select('*').in('bulgu_id', bids);
+      qosCapalar = capalar||[];
+    }
+  }
+  if(qosAktifSayfa === 'dashboard') renderQOSSayfa('dashboard');
+}
+
+function renderQOSMenu() {
+  const el = document.getElementById('qos-menu');
+  if(!el) return;
+  el.innerHTML = QOS_MENU.map(m=>`
+    <div onclick="qosGit('${m.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;background:${qosAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'};border:1px solid ${qosAktifSayfa===m.id?'var(--ac)':'transparent'};" onmouseover="this.style.background='rgba(124,106,247,.08)'" onmouseout="this.style.background='${qosAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'}'">
+      <span style="font-size:14px;">${m.icon}</span>
+      <span style="font-size:11px;font-weight:${qosAktifSayfa===m.id?'700':'500'};color:${qosAktifSayfa===m.id?'var(--ac2)':'var(--mt2)'};">${m.label}</span>
+    </div>`).join('');
+}
+
+function qosGit(sayfa) {
+  qosAktifSayfa = sayfa;
+  renderQOSMenu();
+  renderQOSSayfa(sayfa);
+}
+
+function renderQOSSayfa(sayfa) {
+  const el = document.getElementById('qos-main');
+  if(!el) return;
+
+  if(sayfa === 'dashboard') {
+    const qx = AKTIF_QX?.qx_hesaplanan || 70.4;
+    const hedef = AKTIF_ISLETME?.qx_hedef || 83;
+    const degerNoktasi = AKTIF_ISLETME?.deger_noktasi || 86;
+    const acikCapa = qosCapalar.filter(c=>c.durum==='acik').length;
+    const devamCapa = qosCapalar.filter(c=>c.durum==='devam').length;
+    const kritikBulgu = qosBulgular.filter(b=>b.oncelik==='kritik').length;
+
+    el.innerHTML = `
+      <!-- QX SKOR KARTI -->
+      <div style="${S.card}background:linear-gradient(135deg,rgba(124,106,247,.08),rgba(56,217,192,.04));border-color:var(--b2);margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:32px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:var(--mt);font-family:'Fira Code',monospace;margin-bottom:6px;">QX SKORU</div>
+            <div style="font-size:52px;font-weight:900;color:var(--gold);line-height:1;">${parseFloat(qx).toFixed(1)}</div>
+            <div style="font-size:10px;color:var(--mt);margin-top:6px;">Hedef: <span style="color:var(--gn);font-weight:700">${hedef}</span> · Değer Noktası: <span style="color:var(--ac2)">${degerNoktasi}+</span></div>
+            <div style="margin-top:10px;height:8px;background:var(--bg);border-radius:4px;position:relative;width:180px;">
+              <div style="height:100%;width:${Math.round(qx)}%;background:linear-gradient(90deg,var(--ac),var(--gold));border-radius:4px;"></div>
+              <div style="position:absolute;top:-4px;left:${hedef}%;width:2px;height:16px;background:var(--gn);border-radius:1px;"></div>
+              <div style="position:absolute;top:-4px;left:${degerNoktasi}%;width:2px;height:16px;background:var(--ac2);border-radius:1px;"></div>
+            </div>
+          </div>
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:22px;font-weight:800;color:var(--rd);">${kritikBulgu}</div>
+              <div style="font-size:10px;color:var(--mt);">Kritik Bulgu</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:22px;font-weight:800;color:var(--gold);">${acikCapa}</div>
+              <div style="font-size:10px;color:var(--mt);">Açık CAPA</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:22px;font-weight:800;color:var(--tl);">${devamCapa}</div>
+              <div style="font-size:10px;color:var(--mt);">Devam Eden</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- X-LAYER KARTLARI -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+        ${[
+          {k:'CX',l:'Misafir Deneyimi',s:AKTIF_QX?.cx_skor||71,h:78,r:'#f0c060'},
+          {k:'EX',l:'Çalışan Deneyimi',s:AKTIF_QX?.ex_skor||65,h:75,r:'#3ecf8e'},
+          {k:'OX',l:'Operasyonel Mükkemmellik',s:AKTIF_QX?.ox_skor||72,h:82,r:'#7c6af7'},
+          {k:'BX',l:'Marka Deneyimi',s:AKTIF_QX?.bx_skor||73,h:80,r:'#38d9c0'},
+        ].map(l=>`
+          <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:${l.r};"></div>
+              <span style="font-size:11px;font-weight:700;color:${l.r};">${l.k}</span>
+            </div>
+            <div style="font-size:10px;color:var(--mt2);margin-bottom:6px;">${l.l}</div>
+            <div style="font-size:20px;font-weight:800;">${l.s} <span style="font-size:11px;color:var(--mt);">→ ${l.h}</span></div>
+            <div style="height:4px;background:var(--bg);border-radius:2px;margin-top:6px;"><div style="height:100%;width:${Math.round(l.s/l.h*100)}%;background:${l.r};border-radius:2px;"></div></div>
+          </div>`).join('')}
+      </div>
+
+      <!-- SON DENETİMLER -->
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">🔍 Son Denetimler
+          <button onclick="qosGit('denetim')" style="margin-left:auto;${S.btn}background:var(--ac);color:#fff;font-size:10px;padding:4px 10px;">+ Yeni Denetim</button>
+        </div>
+        ${qosDenetimler.length === 0 ?
+          `<div style="text-align:center;padding:32px;color:var(--mt);">
+            <div style="font-size:14px;margin-bottom:8px;">Henüz denetim kaydı yok</div>
+            <div style="font-size:11px;">Supabase'e veri girildiğinde burada görünecek</div>
+            <button onclick="qosYeniDenetimFormu()" style="margin-top:12px;${S.btn}background:var(--ac);color:#fff;">+ İlk Denetimi Ekle</button>
+          </div>` :
+          qosDenetimler.slice(0,5).map(d=>`
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);">
+              <div style="flex:1;"><div style="font-size:12px;font-weight:600;">${d.tip} — ${d.departman_id||'Genel'}</div>
+              <div style="font-size:10px;color:var(--mt);">${d.tarih} · ${d.denetci||'-'}</div></div>
+              <div style="font-size:16px;font-weight:800;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</div>
+              <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${d.sonuc_durumu==='uygun'?'rgba(62,207,142,.15)':'rgba(242,107,107,.15)'};color:${d.sonuc_durumu==='uygun'?'var(--gn)':'var(--rd)'};">${d.sonuc_durumu||'belirsiz'}</span>
+            </div>`).join('')
+        }
+      </div>`;
+  }
+
+  else if(sayfa === 'denetim') {
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">🔍 Denetim Yönetimi
+          <button onclick="qosYeniDenetimFormu()" style="margin-left:auto;${S.btn}background:var(--ac);color:#fff;font-size:10px;padding:4px 10px;">+ Yeni Denetim</button>
+        </div>
+        ${qosDenetimler.length === 0 ?
+          `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz denetim yok — ilk denetimi ekleyin</div>` :
+          `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <tr style="border-bottom:1px solid var(--bd);">
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tip</th>
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tarih</th>
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Denetçi</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Skor</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Durum</th>
+            </tr>
+            ${qosDenetimler.map(d=>`
+              <tr style="border-bottom:1px solid var(--bd);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+                <td style="padding:8px;font-weight:600;">${d.tip}</td>
+                <td style="padding:8px;color:var(--mt2);">${d.tarih}</td>
+                <td style="padding:8px;color:var(--mt2);">${d.denetci||'-'}</td>
+                <td style="padding:8px;text-align:center;font-weight:700;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</td>
+                <td style="padding:8px;text-align:center;"><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(62,207,142,.15);color:var(--gn);">${d.sonuc_durumu||'-'}</span></td>
+              </tr>`).join('')}
+          </table>`
+        }
+      </div>
+      <div id="qos-denetim-form"></div>`;
+  }
+
+  else if(sayfa === 'bulgu') {
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">⚠ Bulgular (${qosBulgular.length})</div>
+        ${qosBulgular.length === 0 ?
+          `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz bulgu yok</div>` :
+          qosBulgular.map(b=>`
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${b.oncelik==='kritik'?'rgba(242,107,107,.2)':b.oncelik==='yuksek'?'rgba(240,192,96,.2)':'rgba(62,207,142,.2)'};color:${b.oncelik==='kritik'?'var(--rd)':b.oncelik==='yuksek'?'var(--gold)':'var(--gn)'};flex-shrink:0;">${b.oncelik}</span>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:600;margin-bottom:2px;">${b.baslik}</div>
+                  <div style="font-size:10px;color:var(--mt2);">${b.iso_madde||''} · ${b.kategori||''}</div>
+                </div>
+                <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:4px 10px;">+ CAPA</button>
+              </div>
+            </div>`).join('')
+        }
+      </div>`;
+  }
+
+  else if(sayfa === 'capa') {
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">🔧 Düzeltici Faaliyetler (${qosCapalar.length})</div>
+        ${qosCapalar.length === 0 ?
+          `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz CAPA kaydı yok</div>` :
+          qosCapalar.map(c=>`
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:600;margin-bottom:3px;">${c.aksiyon}</div>
+                  <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'}</div>
+                </div>
+                <span style="font-size:9px;padding:2px 8px;border-radius:20px;flex-shrink:0;background:${c.durum==='tamamlandi'?'rgba(62,207,142,.15)':c.durum==='devam'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${c.durum==='tamamlandi'?'var(--gn)':c.durum==='devam'?'var(--gold)':'var(--rd)'};">${c.durum}</span>
+              </div>
+            </div>`).join('')
+        }
+      </div>`;
+  }
+
+  else if(sayfa === 'iso') {
+    const isoMaddeler = [
+      {madde:'Md.4.1',baslik:'Kuruluşun bağlamı',durum:'uygun'},
+      {madde:'Md.6.1',baslik:'Risk ve fırsat yönetimi',durum:'kismi'},
+      {madde:'Md.7.1',baslik:'Kaynaklar',durum:'uygun'},
+      {madde:'Md.8.1',baslik:'Operasyonel planlama',durum:'kismi'},
+      {madde:'Md.9.1',baslik:'İzleme ve ölçüm',durum:'eksik'},
+      {madde:'Md.10.2',baslik:'Uygunsuzluk ve düzeltici faaliyet',durum:'uygun'},
+    ];
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">📋 ISO 9001:2015 Uyum Matrisi</div>
+        ${isoMaddeler.map(m=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);">
+            <span style="font-size:10px;font-family:'Fira Code',monospace;color:var(--ac2);min-width:60px;">${m.madde}</span>
+            <span style="flex:1;font-size:12px;">${m.baslik}</span>
+            <span style="font-size:9px;padding:2px 10px;border-radius:20px;background:${m.durum==='uygun'?'rgba(62,207,142,.15)':m.durum==='kismi'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${m.durum==='uygun'?'var(--gn)':m.durum==='kismi'?'var(--gold)':'var(--rd)'};">${m.durum}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  else if(sayfa === 'trend') {
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">📈 QX Trend Analizi</div>
+        <div style="padding:32px;text-align:center;color:var(--mt);">
+          <div style="font-size:14px;margin-bottom:8px;">Supabase'e veri girildiğinde trend grafik oluşacak</div>
+          <div style="font-size:11px;">qx_skor tablosuna kayıt ekleyin → grafik otomatik güncellenir</div>
+        </div>
+      </div>`;
+  }
+}
+
+function qosYeniDenetimFormu() {
+  const el = document.getElementById('qos-denetim-form') || document.getElementById('qos-main');
+  const formHtml = `
+    <div style="${S.card}">
+      <div style="${S.cardTitle}">+ Yeni Denetim Kaydı</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div><label style="${S.lbl}">Denetim Tipi</label>
+          <select id="qos-d-tip" style="${S.inp}padding:7px 10px;">
+            <option value="LQA">LQA</option>
+            <option value="ISO">ISO</option>
+            <option value="EFQM">EFQM</option>
+            <option value="mystery_shopper">Mystery Shopper</option>
+            <option value="ic_denetim">İç Denetim</option>
+          </select>
+        </div>
+        <div><label style="${S.lbl}">ISO Standardı (opsiyonel)</label>
+          <input id="qos-d-iso" style="${S.inp}" placeholder="ISO 9001:2015"></div>
+        <div><label style="${S.lbl}">Tarih</label>
+          <input id="qos-d-tarih" type="date" style="${S.inp}" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div><label style="${S.lbl}">Denetçi</label>
+          <input id="qos-d-denetci" style="${S.inp}" placeholder="Denetçi adı"></div>
+        <div><label style="${S.lbl}">Toplam Skor (0-100)</label>
+          <input id="qos-d-skor" type="number" min="0" max="100" style="${S.inp}" placeholder="85"></div>
+        <div><label style="${S.lbl}">Sonuç Durumu</label>
+          <select id="qos-d-sonuc" style="${S.inp}padding:7px 10px;">
+            <option value="uygun">Uygun</option>
+            <option value="kismi_uygun">Kısmi Uygun</option>
+            <option value="uygun_degil">Uygun Değil</option>
+            <option value="kritik">Kritik</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="${S.lbl}">Rapor Notu</label>
+        <textarea id="qos-d-not" style="${S.ta}" placeholder="Denetim genel notu..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="qosDenetimKaydet()" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
+        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
+      </div>
+    </div>`;
+  if(document.getElementById('qos-denetim-form')) {
+    document.getElementById('qos-denetim-form').innerHTML = formHtml;
+  } else {
+    el.innerHTML += formHtml;
+  }
+}
+
+async function qosDenetimKaydet() {
+  if(!AKTIF_ISLETME){N('Önce işletme seçin');return;}
+  const yeni = {
+    isletme_id:   AKTIF_ISLETME.id,
+    tip:          document.getElementById('qos-d-tip')?.value,
+    iso_standart: document.getElementById('qos-d-iso')?.value||null,
+    tarih:        document.getElementById('qos-d-tarih')?.value,
+    denetci:      document.getElementById('qos-d-denetci')?.value||null,
+    toplam_skor:  parseFloat(document.getElementById('qos-d-skor')?.value)||null,
+    sonuc_durumu: document.getElementById('qos-d-sonuc')?.value,
+    rapor_notu:   document.getElementById('qos-d-not')?.value||null,
+  };
+  const kayit = await dbInsert('denetim', yeni);
+  if(kayit){
+    N('✓ Denetim Supabase\'e kaydedildi');
+    await yukleDenetimler();
+    qosGit('denetim');
+  } else {
+    N('Kayıt hatası — konsolu kontrol edin');
+  }
+}
+
+async function qosCapaEkle(bulguId) {
+  const aksiyon = prompt('CAPA aksiyonu girin:');
+  if(!aksiyon) return;
+  const sorumlu = prompt('Sorumlu kişi:');
+  const yeni = {
+    bulgu_id:    bulguId,
+    tip:         'duzeltici',
+    aksiyon:     aksiyon,
+    sorumlu_ad:  sorumlu||null,
+    durum:       'acik',
+  };
+  const kayit = await dbInsert('capa', yeni);
+  if(kayit){
+    N('✓ CAPA Supabase\'e kaydedildi');
+    await yukleDenetimler();
+    qosGit('capa');
+  }
+}
+  init();
+  // Supabase'den canlı veri yükle
+  await isletmeYukle();
+  if(AKTIF_ISLETME) {
+    // Topbar'da işletme adını göster
+    const brand = document.querySelector('.tb-tagline');
+    if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
+    // OKR ve QX verilerini güncelle
+    if(AKTIF_QX) {
+      // QX_LAYERS'ı canlı veriyle güncelle
+      QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
+      QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
+      QX_LAYERS[2].skor = AKTIF_QX.ox_skor || QX_LAYERS[2].skor;
+      QX_LAYERS[3].skor = AKTIF_QX.bx_skor || QX_LAYERS[3].skor;
+    }
+    // OKR verilerini canlı yükle
+    if(AKTIF_OKRLER.length > 0) {
+      for(let i=0;i<Math.min(AKTIF_OKRLER.length, OKR_DATA.length);i++) {
+        OKR_DATA[i].objective = AKTIF_OKRLER[i].objective || OKR_DATA[i].objective;
+        OKR_DATA[i].owner = AKTIF_OKRLER[i].sahip || OKR_DATA[i].owner;
+        OKR_DATA[i].qxLayer = AKTIF_OKRLER[i].x_layer || OKR_DATA[i].qxLayer;
+      }
+    }
+    N('✓ ' + AKTIF_ISLETME.isletme_adi + ' — Supabase bağlantısı aktif');
+  }
+}
+başlat();
 </script>
 
 </body>
