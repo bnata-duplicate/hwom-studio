@@ -5,38 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HWOM Studio v4.0 — HumanSoft AI Atlas</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fira+Code:wght@400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ═══ SUPABASE CONFIG ═══
+// ═══ SUPABASE CONFIG — CDN'siz, inline fetch ═══
 const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const supa = {
+  from: (table) => ({
+    select: (cols='*') => ({
+      eq: function(col, val) { this._filters = this._filters||[]; this._filters.push({col,val}); return this; },
+      in: function(col, vals) { this._in = {col,vals}; return this; },
+      _filters: [],
+      _in: null,
+      then: async function(resolve) {
+        let url = `${SUPA_URL}/rest/v1/${table}?select=${cols}`;
+        if(this._filters) this._filters.forEach(f => url += `&${f.col}=eq.${f.val}`);
+        if(this._in) url += `&${this._in.col}=in.(${this._in.vals.join(',')})`;
+        try {
+          const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+          const data = await r.json();
+          resolve({data: Array.isArray(data)?data:[], error: null});
+        } catch(e) { resolve({data:[], error:e}); }
+      }
+    }),
+    insert: (row) => ({
+      select: () => ({
+        then: async function(resolve) {
+          try {
+            const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+              method:'POST',
+              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+              body: JSON.stringify(row)
+            });
+            const data = await r.json();
+            resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
+          } catch(e) { resolve({data:[], error:e}); }
+        }
+      })
+    }),
+    update: (updates) => ({
+      eq: (col,val) => ({
+        select: () => ({
+          then: async function(resolve) {
+            try {
+              const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
+                method:'PATCH',
+                headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+                body: JSON.stringify(updates)
+              });
+              const data = await r.json();
+              resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
+            } catch(e) { resolve({data:[], error:e}); }
+          }
+        })
+      })
+    }),
+    delete: () => ({
+      eq: (col,val) => ({
+        then: async function(resolve) {
+          try {
+            const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
+              method:'DELETE',
+              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+            });
+            resolve({error: r.ok?null:'delete error'});
+          } catch(e) { resolve({error:e}); }
+        }
+      })
+    })
+  })
+};
 
 // ═══ CDM HELPERS ═══
 async function dbGet(table, filters={}) {
-  let q = supa.from(table).select('*');
-  for(const [k,v] of Object.entries(filters)) q = q.eq(k,v);
-  const {data,error} = await q;
-  if(error){console.error('DB hata:',error);return [];}
-  return data||[];
-}
-async function dbInsert(table, row) {
-  const {data,error} = await supa.from(table).insert(row).select();
-  if(error){console.error('DB insert hata:',error);return null;}
-  return data?.[0]||null;
-}
-async function dbUpdate(table, id, updates) {
-  const {data,error} = await supa.from(table).update(updates).eq('id',id).select();
-  if(error){console.error('DB update hata:',error);return null;}
-  return data?.[0]||null;
-}
-async function dbDelete(table, id) {
-  const {error} = await supa.from(table).delete().eq('id',id);
-  if(error){console.error('DB delete hata:',error);return false;}
-  return true;
+  let url = `${SUPA_URL}/rest/v1/${table}?select=*`;
+  for(const [k,v] of Object.entries(filters)) url += `&${k}=eq.${encodeURIComponent(v)}`;
+  try {
+    const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    const data = await r.json();
+    if(!Array.isArray(data)){console.error('DB hata:',data);return[];}
+    return data;
+  } catch(e) {console.error('DB fetch hata:',e);return[];}
 }
 
-// Aktif işletme — başlangıçta Eliz yükle
+async function dbInsert(table, row) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body: JSON.stringify(row)
+    });
+    const data = await r.json();
+    if(!r.ok){console.error('DB insert hata:',data);return null;}
+    return Array.isArray(data)?data[0]:data;
+  } catch(e){console.error('DB insert hata:',e);return null;}
+}
+
+// Aktif işletme
 let AKTIF_ISLETME = null;
 let AKTIF_DEPARTMANLAR = [];
 let AKTIF_QX = null;
@@ -50,10 +115,11 @@ async function isletmeYukle() {
     const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
     AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
     AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
-    // Sol panel işletme adını güncelle
     const el = document.getElementById('qos-isletme-adi');
     if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
-    console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi, '| QX:', AKTIF_QX?.qx_hesaplanan);
+    console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi);
+  } else {
+    console.warn('İşletme bulunamadı');
   }
 }
 </script>
@@ -2544,76 +2610,4 @@ function qosYeniDenetimFormu() {
       </div>
       <div style="display:flex;gap:8px;">
         <button onclick="qosDenetimKaydet()" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-      </div>
-    </div>`;
-  if(document.getElementById('qos-denetim-form')) {
-    document.getElementById('qos-denetim-form').innerHTML = formHtml;
-  } else {
-    el.innerHTML += formHtml;
-  }
-}
-
-async function qosDenetimKaydet() {
-  if(!AKTIF_ISLETME){N('Önce işletme seçin');return;}
-  const yeni = {
-    isletme_id:   AKTIF_ISLETME.id,
-    tip:          document.getElementById('qos-d-tip')?.value,
-    iso_standart: document.getElementById('qos-d-iso')?.value||null,
-    tarih:        document.getElementById('qos-d-tarih')?.value,
-    denetci:      document.getElementById('qos-d-denetci')?.value||null,
-    toplam_skor:  parseFloat(document.getElementById('qos-d-skor')?.value)||null,
-    sonuc_durumu: document.getElementById('qos-d-sonuc')?.value,
-    rapor_notu:   document.getElementById('qos-d-not')?.value||null,
-  };
-  const kayit = await dbInsert('denetim', yeni);
-  if(kayit){
-    N('✓ Denetim Supabase\'e kaydedildi');
-    await yukleDenetimler();
-    qosGit('denetim');
-  } else {
-    N('Kayıt hatası — konsolu kontrol edin');
-  }
-}
-
-async function qosCapaEkle(bulguId) {
-  const aksiyon = prompt('CAPA aksiyonu girin:');
-  if(!aksiyon) return;
-  const sorumlu = prompt('Sorumlu kişi:');
-  const yeni = {
-    bulgu_id:    bulguId,
-    tip:         'duzeltici',
-    aksiyon:     aksiyon,
-    sorumlu_ad:  sorumlu||null,
-    durum:       'acik',
-  };
-  const kayit = await dbInsert('capa', yeni);
-  if(kayit){
-    N('✓ CAPA Supabase\'e kaydedildi');
-    await yukleDenetimler();
-    qosGit('capa');
-  }
-}
-
-// ═══ INIT — tüm script'ler yüklendikten sonra çalış ═══
-async function başlat() {
-  init();
-  try {
-    await isletmeYukle();
-    if(AKTIF_ISLETME) {
-      const brand = document.querySelector('.tb-tagline');
-      if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
-      if(AKTIF_QX) {
-        QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
-        QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
-        QX_LAYERS[2].skor = AKTIF_QX.ox_skor || QX_LAYERS[2].skor;
-        QX_LAYERS[3].skor = AKTIF_QX.bx_skor || QX_LAYERS[3].skor;
-      }
-      if(AKTIF_OKRLER.length > 0) {
-        for(let i=0;i<Math.min(AKTIF_OKRLER.length, OKR_DATA.length);i++) {
-          OKR_DATA[i].objective = AKTIF_OKRLER[i].objective || OKR_DATA[i].objective;
-          OKR_DATA[i].owner = AKTIF_OKRLER[i].sahip || OKR_DATA[i].owner;
-          OKR_DATA[i].qxLayer = AKTIF_OKRLER[i].x_layer || OKR_DATA[i].qxLayer;
-        }
-      }
-      setTimeout(()=>N('✓ ' 
+        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg
