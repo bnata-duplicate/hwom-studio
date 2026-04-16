@@ -702,15 +702,17 @@ function goTo(n) {
     }
   });
   currentScreen = n;
-  if(n===2) { setTimeout(() => { if(nodes.length===0) addDefaultFlow(); else renderAll2(); }, 150); }
-  if(n===3) renderTmpl();
-  if(n===4) autoGenDB();
-  if(n===5) initAF();
-  if(n===6) initAT();
-  if(n===7) initDF();
-  if(n===8) initOKR();
-  if(n===9) initRE();
-  if(n===10) initQualityOS();
+  setTimeout(()=>{
+    if(n===2) { if(nodes.length===0) addDefaultFlow(); else renderAll2(); }
+    if(n===3 && typeof renderTmpl==='function') renderTmpl();
+    if(n===4 && typeof autoGenDB==='function') autoGenDB();
+    if(n===5 && typeof initAF==='function') initAF();
+    if(n===6 && typeof initAT==='function') initAT();
+    if(n===7 && typeof initDF==='function') initDF();
+    if(n===8 && typeof initOKR==='function') initOKR();
+    if(n===9 && typeof initRE==='function') initRE();
+    if(n===10 && typeof initQualityOS==='function') initQualityOS();
+  }, 50);
 }
 
 function loadDemo() {
@@ -2606,8 +2608,4 @@ function qosYeniDenetimFormu() {
       </div>
       <div style="margin-bottom:14px;">
         <label style="${S.lbl}">Rapor Notu</label>
-        <textarea id="qos-d-not" style="${S.ta}" placeholder="Denetim genel notu..."></textarea>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="qosDenetimKaydet()" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg
+        <textarea id="qos-d-not" style="${S.ta}" placeholder="Denetim
