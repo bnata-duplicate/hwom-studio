@@ -9,7 +9,7 @@
 <script>
 // ═══ SUPABASE CONFIG ═══
 const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
-const SUPA_KEY = 'sb_publishable_pd5x1g6ZGu4KiNLaTmw_UA_JJCva0wn';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ═══ CDM HELPERS ═══
@@ -2616,14 +2616,4 @@ async function başlat() {
           OKR_DATA[i].qxLayer = AKTIF_OKRLER[i].x_layer || OKR_DATA[i].qxLayer;
         }
       }
-      setTimeout(()=>N('✓ ' + AKTIF_ISLETME.isletme_adi + ' — Supabase aktif'), 500);
-    }
-  } catch(e) {
-    console.error('Başlat hatası:', e);
-  }
-}
-başlat();
-</script>
-
-</body>
-</html>
+      setTimeout(()=>N('✓ ' 
