@@ -421,7 +421,7 @@ async function isletmeYukle() {
     const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
     AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
     AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
-    const el = document.getElementById('qos-isletme-adi');
+    const el = document.querySelector('#qos-isletme-adi');
     if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
     console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi);
   } else {
@@ -1639,7 +1639,7 @@ function initOKR() {
 }
 
 function renderOKRList() {
-  const el = document.getElementById('okr-list');
+  const el = document.querySelector('#okr-list');
   if(!el) return;
   el.innerHTML = OKR_DATA.map(o => {
     const prog = Math.round(o.keyResults.reduce((s,kr)=>s+krProgress(kr),0)/o.keyResults.length);
@@ -1658,7 +1658,7 @@ function renderOKRList() {
 }
 
 function renderOKRQxSidebar() {
-  const el = document.getElementById('okr-qx-sidebar');
+  const el = document.querySelector('#okr-qx-sidebar');
   if(!el) return;
   const qx = calcQX(QX_LAYERS);
   const qxH = calcQXHedef(QX_LAYERS);
@@ -1675,7 +1675,7 @@ function renderOKRQxSidebar() {
 }
 
 function renderOKRMain() {
-  const el = document.getElementById('okr-main');
+  const el = document.querySelector('#okr-main');
   if(!el) return;
   const okr = OKR_DATA.find(o=>o.id===selectedOKR);
   if(!okr) return;
@@ -1800,7 +1800,7 @@ function initRE() {
 }
 
 function renderREList() {
-  const el = document.getElementById('re-list');
+  const el = document.querySelector('#re-list');
   if(!el) return;
   el.innerHTML = RE_TEMPLATES.map(t=>{
     const isActive = selectedTemplate === t.id;
@@ -1822,7 +1822,7 @@ function hexToRgb(hex) {
 }
 
 function renderREHistory() {
-  const el = document.getElementById('re-history');
+  const el = document.querySelector('#re-history');
   if(!el) return;
   el.innerHTML = `
     <div style="font-size:10px;padding:5px 0;border-bottom:1px solid var(--bd);">🌅 GM Brifing — 14 Nis 08:00 <span style="color:var(--gn);margin-left:4px;">✓</span></div>
@@ -1840,7 +1840,7 @@ function reSetTemplate(id) {
 }
 
 function renderREMain() {
-  const el = document.getElementById('re-main');
+  const el = document.querySelector('#re-main');
   if(!el) return;
   const tmpl = RE_TEMPLATES.find(t=>t.id===selectedTemplate);
   if(!tmpl) return;
@@ -1951,10 +1951,10 @@ async function reGenerate() {
   const tmpl = RE_TEMPLATES.find(t=>t.id===selectedTemplate);
   const qx = calcQX(QX_LAYERS);
   const qxH = calcQXHedef(QX_LAYERS);
-  const statusEl = document.getElementById('re-gen-msg');
-  const outputEl = document.getElementById('re-output');
-  const btnsEl = document.getElementById('re-gen-btns');
-  const statusDiv = document.getElementById('re-gen-status');
+  const statusEl = document.querySelector('#re-gen-msg');
+  const outputEl = document.querySelector('#re-output');
+  const btnsEl = document.querySelector('#re-gen-btns');
+  const statusDiv = document.querySelector('#re-gen-status');
   if(!tmpl||!statusEl) return;
 
   const msgs = ['Veri analiz ediliyor...','X-layer skorları işleniyor...','İçerik yapılandırılıyor...','Son rötuşlar yapılıyor...'];
@@ -2013,7 +2013,7 @@ function initQualityOS() {
   renderQOSSayfa(qosAktifSayfa);
   // Supabase'den veri yükle
   if(AKTIF_ISLETME) {
-    const el = document.getElementById('qos-isletme-adi');
+    const el = document.querySelector('#qos-isletme-adi');
     if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
     yukleDenetimler();
   }
@@ -2036,7 +2036,7 @@ async function yukleDenetimler() {
 }
 
 function renderQOSMenu() {
-  const el = document.getElementById('qos-menu');
+  const el = document.querySelector('#qos-menu');
   if(!el) return;
   el.innerHTML = QOS_MENU.map(m=>`
     <div onclick="qosGit('${m.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;background:${qosAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'};border:1px solid ${qosAktifSayfa===m.id?'var(--ac)':'transparent'};" onmouseover="this.style.background='rgba(124,106,247,.08)'" onmouseout="this.style.background='${qosAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'}'">
@@ -2052,7 +2052,7 @@ function qosGit(sayfa) {
 }
 
 function renderQOSSayfa(sayfa) {
-  const el = document.getElementById('qos-main');
+  const el = document.querySelector('#qos-main');
   if(!el) return;
 
   if(sayfa === 'dashboard') {
@@ -2240,7 +2240,7 @@ function renderQOSSayfa(sayfa) {
 }
 
 function qosYeniDenetimFormu() {
-  const el = document.getElementById('qos-denetim-form') || document.getElementById('qos-main');
+  const el = document.querySelector('#qos-denetim-form') || document.querySelector('#qos-main');
   const formHtml = `
     <div style="${S.card}">
       <div style="${S.cardTitle}">+ Yeni Denetim Kaydı</div>
@@ -2280,8 +2280,8 @@ function qosYeniDenetimFormu() {
         <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
       </div>
     </div>`;
-  if(document.getElementById('qos-denetim-form')) {
-    document.getElementById('qos-denetim-form').innerHTML = formHtml;
+  if(document.querySelector('#qos-denetim-form')) {
+    document.querySelector('#qos-denetim-form').innerHTML = formHtml;
   } else {
     el.innerHTML += formHtml;
   }
