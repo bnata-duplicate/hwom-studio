@@ -50,6 +50,9 @@ async function isletmeYukle() {
     const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
     AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
     AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
+    // Sol panel işletme adını güncelle
+    const el = document.getElementById('qos-isletme-adi');
+    if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
     console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi, '| QX:', AKTIF_QX?.qx_hesaplanan);
   }
 }
