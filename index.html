@@ -5,124 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HWOM Studio v4.0 — HumanSoft AI Atlas</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fira+Code:wght@400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<script>
-// ═══ SUPABASE CONFIG — CDN'siz, inline fetch ═══
-const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
 
-const supa = {
-  from: (table) => ({
-    select: (cols='*') => ({
-      eq: function(col, val) { this._filters = this._filters||[]; this._filters.push({col,val}); return this; },
-      in: function(col, vals) { this._in = {col,vals}; return this; },
-      _filters: [],
-      _in: null,
-      then: async function(resolve) {
-        let url = `${SUPA_URL}/rest/v1/${table}?select=${cols}`;
-        if(this._filters) this._filters.forEach(f => url += `&${f.col}=eq.${f.val}`);
-        if(this._in) url += `&${this._in.col}=in.(${this._in.vals.join(',')})`;
-        try {
-          const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
-          const data = await r.json();
-          resolve({data: Array.isArray(data)?data:[], error: null});
-        } catch(e) { resolve({data:[], error:e}); }
-      }
-    }),
-    insert: (row) => ({
-      select: () => ({
-        then: async function(resolve) {
-          try {
-            const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-              method:'POST',
-              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-              body: JSON.stringify(row)
-            });
-            const data = await r.json();
-            resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
-          } catch(e) { resolve({data:[], error:e}); }
-        }
-      })
-    }),
-    update: (updates) => ({
-      eq: (col,val) => ({
-        select: () => ({
-          then: async function(resolve) {
-            try {
-              const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
-                method:'PATCH',
-                headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-                body: JSON.stringify(updates)
-              });
-              const data = await r.json();
-              resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
-            } catch(e) { resolve({data:[], error:e}); }
-          }
-        })
-      })
-    }),
-    delete: () => ({
-      eq: (col,val) => ({
-        then: async function(resolve) {
-          try {
-            const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
-              method:'DELETE',
-              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-            });
-            resolve({error: r.ok?null:'delete error'});
-          } catch(e) { resolve({error:e}); }
-        }
-      })
-    })
-  })
-};
-
-// ═══ CDM HELPERS ═══
-async function dbGet(table, filters={}) {
-  let url = `${SUPA_URL}/rest/v1/${table}?select=*`;
-  for(const [k,v] of Object.entries(filters)) url += `&${k}=eq.${encodeURIComponent(v)}`;
-  try {
-    const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
-    const data = await r.json();
-    if(!Array.isArray(data)){console.error('DB hata:',data);return[];}
-    return data;
-  } catch(e) {console.error('DB fetch hata:',e);return[];}
-}
-
-async function dbInsert(table, row) {
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-      body: JSON.stringify(row)
-    });
-    const data = await r.json();
-    if(!r.ok){console.error('DB insert hata:',data);return null;}
-    return Array.isArray(data)?data[0]:data;
-  } catch(e){console.error('DB insert hata:',e);return null;}
-}
-
-// Aktif işletme
-let AKTIF_ISLETME = null;
-let AKTIF_DEPARTMANLAR = [];
-let AKTIF_QX = null;
-let AKTIF_OKRLER = [];
-
-async function isletmeYukle() {
-  const isletmeler = await dbGet('isletme', {aktif:true});
-  if(isletmeler.length > 0) {
-    AKTIF_ISLETME = isletmeler[0];
-    AKTIF_DEPARTMANLAR = await dbGet('departman', {isletme_id: AKTIF_ISLETME.id});
-    const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
-    AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
-    AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
-    const el = document.getElementById('qos-isletme-adi');
-    if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
-    console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi);
-  } else {
-    console.warn('İşletme bulunamadı');
-  }
-}
-</script>
 <style>
 :root{
   --bg:#0d0e12;--bg2:#13151b;--bg3:#1c1f28;
@@ -674,7 +557,219 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </div>
+
+
+<!-- ═══ M05 AGENT FACTORY ═══ -->
+<div class="screen" id="s5">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Ajanlarım</div>
+      <div id="af-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="afYeniAjan()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni Ajan Yarat</button>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;font-size:11px;color:var(--mt2);line-height:2;">
+        Toplam: <span style="color:var(--tx);font-weight:600" id="af-total">3</span><br>
+        Aktif: <span style="color:var(--gn);font-weight:600">2</span><br>
+        Bu ay karar: <span style="color:var(--tx);font-weight:600">847</span>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="af-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M06 AGENT TRAINING ═══ -->
+<div class="screen" id="s6">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Eğitim Paneli</div>
+      <div id="at-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="at-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M07 DASHBOARD FACTORY ═══ -->
+<div class="screen" id="s7">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Dashboard'larım</div>
+      <div id="df-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="dfYeni()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni Dashboard</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="df-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M08 OKR & QX TRACKER ═══ -->
+<div class="screen" id="s8">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">OKR Listesi</div>
+      <div id="okr-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="okrYeni()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni OKR Ekle</button>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">QX Özet</div>
+        <div id="okr-qx-sidebar" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="okr-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M09 REPORT ENGINE ═══ -->
+<div class="screen" id="s9">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Rapor Şablonları</div>
+      <div id="re-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Son Raporlar</div>
+        <div id="re-history" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="re-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M10 QUALITY OS ═══ -->
+<div class="screen" id="s10">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Quality OS</div>
+      <div id="qos-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Canlı Veri</div>
+        <div id="qos-db-status" style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;line-height:2;">
+          <span style="color:var(--gn)">● </span>Supabase bağlı<br>
+          <span id="qos-isletme-adi" style="color:var(--ac2)">Yükleniyor...</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="qos-main"></div>
+  </div>
+</div>
+
+
+
 <script>
+
+// ═══ SUPABASE CONFIG — CDN'siz, inline fetch ═══
+const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
+
+const supa = {
+  from: (table) => ({
+    select: (cols='*') => ({
+      eq: function(col, val) { this._filters = this._filters||[]; this._filters.push({col,val}); return this; },
+      in: function(col, vals) { this._in = {col,vals}; return this; },
+      _filters: [],
+      _in: null,
+      then: async function(resolve) {
+        let url = `${SUPA_URL}/rest/v1/${table}?select=${cols}`;
+        if(this._filters) this._filters.forEach(f => url += `&${f.col}=eq.${f.val}`);
+        if(this._in) url += `&${this._in.col}=in.(${this._in.vals.join(',')})`;
+        try {
+          const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+          const data = await r.json();
+          resolve({data: Array.isArray(data)?data:[], error: null});
+        } catch(e) { resolve({data:[], error:e}); }
+      }
+    }),
+    insert: (row) => ({
+      select: () => ({
+        then: async function(resolve) {
+          try {
+            const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+              method:'POST',
+              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+              body: JSON.stringify(row)
+            });
+            const data = await r.json();
+            resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
+          } catch(e) { resolve({data:[], error:e}); }
+        }
+      })
+    }),
+    update: (updates) => ({
+      eq: (col,val) => ({
+        select: () => ({
+          then: async function(resolve) {
+            try {
+              const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
+                method:'PATCH',
+                headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+                body: JSON.stringify(updates)
+              });
+              const data = await r.json();
+              resolve({data: Array.isArray(data)?data:[data], error: r.ok?null:data});
+            } catch(e) { resolve({data:[], error:e}); }
+          }
+        })
+      })
+    }),
+    delete: () => ({
+      eq: (col,val) => ({
+        then: async function(resolve) {
+          try {
+            const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${col}=eq.${val}`, {
+              method:'DELETE',
+              headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+            });
+            resolve({error: r.ok?null:'delete error'});
+          } catch(e) { resolve({error:e}); }
+        }
+      })
+    })
+  })
+};
+
+// ═══ CDM HELPERS ═══
+async function dbGet(table, filters={}) {
+  let url = `${SUPA_URL}/rest/v1/${table}?select=*`;
+  for(const [k,v] of Object.entries(filters)) url += `&${k}=eq.${encodeURIComponent(v)}`;
+  try {
+    const r = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    const data = await r.json();
+    if(!Array.isArray(data)){console.error('DB hata:',data);return[];}
+    return data;
+  } catch(e) {console.error('DB fetch hata:',e);return[];}
+}
+
+async function dbInsert(table, row) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body: JSON.stringify(row)
+    });
+    const data = await r.json();
+    if(!r.ok){console.error('DB insert hata:',data);return null;}
+    return Array.isArray(data)?data[0]:data;
+  } catch(e){console.error('DB insert hata:',e);return null;}
+}
+
+// Aktif işletme
+let AKTIF_ISLETME = null;
+let AKTIF_DEPARTMANLAR = [];
+let AKTIF_QX = null;
+let AKTIF_OKRLER = [];
+
+async function isletmeYukle() {
+  const isletmeler = await dbGet('isletme', {aktif:true});
+  if(isletmeler.length > 0) {
+    AKTIF_ISLETME = isletmeler[0];
+    AKTIF_DEPARTMANLAR = await dbGet('departman', {isletme_id: AKTIF_ISLETME.id});
+    const qxler = await dbGet('qx_skor', {isletme_id: AKTIF_ISLETME.id});
+    AKTIF_QX = qxler.sort((a,b)=>new Date(b.tarih)-new Date(a.tarih))[0]||null;
+    AKTIF_OKRLER = await dbGet('okr', {isletme_id: AKTIF_ISLETME.id});
+    const el = document.getElementById('qos-isletme-adi');
+    if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
+    console.log('✓ İşletme yüklendi:', AKTIF_ISLETME.isletme_adi);
+  } else {
+    console.warn('İşletme bulunamadı');
+  }
+}
+
+
 // ══ GLOBALS ══
 let currentScreen = 0;
 let currentSectorTmpl = 'hotel';
@@ -1211,98 +1306,8 @@ function init(){
   setInterval(()=>{const t=new Date().toLocaleTimeString('tr-TR');const c1=document.getElementById('clockDisplay');const c2=document.getElementById('dbClock4');if(c1)c1.textContent=t;if(c2)c2.textContent=t;},1000);
 }
 // init() will be called after all scripts load
-</script>
 
-<!-- ═══ M05 AGENT FACTORY ═══ -->
-<div class="screen" id="s5">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Ajanlarım</div>
-      <div id="af-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <button onclick="afYeniAjan()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni Ajan Yarat</button>
-      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;font-size:11px;color:var(--mt2);line-height:2;">
-        Toplam: <span style="color:var(--tx);font-weight:600" id="af-total">3</span><br>
-        Aktif: <span style="color:var(--gn);font-weight:600">2</span><br>
-        Bu ay karar: <span style="color:var(--tx);font-weight:600">847</span>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="af-main"></div>
-  </div>
-</div>
 
-<!-- ═══ M06 AGENT TRAINING ═══ -->
-<div class="screen" id="s6">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Eğitim Paneli</div>
-      <div id="at-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="at-main"></div>
-  </div>
-</div>
-
-<!-- ═══ M07 DASHBOARD FACTORY ═══ -->
-<div class="screen" id="s7">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:260px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Dashboard'larım</div>
-      <div id="df-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <button onclick="dfYeni()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni Dashboard</button>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="df-main"></div>
-  </div>
-</div>
-
-<!-- ═══ M08 OKR & QX TRACKER ═══ -->
-<div class="screen" id="s8">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">OKR Listesi</div>
-      <div id="okr-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <button onclick="okrYeni()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni OKR Ekle</button>
-      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
-        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">QX Özet</div>
-        <div id="okr-qx-sidebar" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="okr-main"></div>
-  </div>
-</div>
-
-<!-- ═══ M09 REPORT ENGINE ═══ -->
-<div class="screen" id="s9">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Rapor Şablonları</div>
-      <div id="re-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
-        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Son Raporlar</div>
-        <div id="re-history" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="re-main"></div>
-  </div>
-</div>
-
-<!-- ═══ M10 QUALITY OS ═══ -->
-<div class="screen" id="s10">
-  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
-    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Quality OS</div>
-      <div id="qos-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
-      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
-        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Canlı Veri</div>
-        <div id="qos-db-status" style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;line-height:2;">
-          <span style="color:var(--gn)">● </span>Supabase bağlı<br>
-          <span id="qos-isletme-adi" style="color:var(--ac2)">Yükleniyor...</span>
-        </div>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:24px;" id="qos-main"></div>
-  </div>
-</div>
-
-<script>
 // ═══ ORTAK STILLER ═══
 const S = {
   card: 'background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:14px;',
@@ -2608,4 +2613,5 @@ function qosYeniDenetimFormu() {
       </div>
       <div style="margin-bottom:14px;">
         <label style="${S.lbl}">Rapor Notu</label>
-        <textarea id="qos-d-not" style="${S.ta}" placeholder="Denetim
+        <textarea id="qos-d-not" style="${S.ta}" placeholder="Denetim genel notu..."></textarea>
+ 
