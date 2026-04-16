@@ -2660,4 +2660,53 @@ if(document.readyState === 'loading') {
 <div class="screen" id="s8">
   <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
     <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
-      <div s
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">OKR Listesi</div>
+      <div id="okr-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="okrYeni()" style="width:100%;margin-top:12px;padding:10px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--mt2);font-size:11px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac2)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mt2)'">+ Yeni OKR Ekle</button>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">QX Özet</div>
+        <div id="okr-qx-sidebar" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="okr-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M09 REPORT ENGINE ═══ -->
+<div class="screen" id="s9">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Rapor Şablonları</div>
+      <div id="re-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Son Raporlar</div>
+        <div id="re-history" style="font-size:11px;line-height:2.2;color:var(--mt2);"></div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="re-main"></div>
+  </div>
+</div>
+
+<!-- ═══ M10 QUALITY OS ═══ -->
+<div class="screen" id="s10">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div style="width:240px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">Quality OS</div>
+      <div id="qos-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Canlı Veri</div>
+        <div id="qos-db-status" style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;line-height:2;">
+          <span style="color:var(--gn)">● </span>Supabase bağlı<br>
+          <span id="qos-isletme-adi" style="color:var(--ac2)">Yükleniyor...</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;" id="qos-main"></div>
+  </div>
+</div>
+
+
+
+
+</body>
+</html>
