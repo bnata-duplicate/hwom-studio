@@ -8,8 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ═══ SUPABASE CONFIG ═══
-const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
-const SUPA_KEY = 'sb_publishable_pd5x1g6ZGu4KiNLaTmw_UA_JJCva0wn';
+const SUPA_URL = 'https://cqdveiigszgabzmiwvaf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ═══ CDM HELPERS ═══
@@ -1236,7 +1236,11 @@ function init(){
 
 <script>
 // ═══ ANTHROPIC API CONFIG ═══
-const ANTHROPIC_API_KEY = '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';
+let ANTHROPIC_API_KEY = localStorage.getItem('hwom_api_key') || '';
+if(!ANTHROPIC_API_KEY) {
+  ANTHROPIC_API_KEY = prompt('HWOM Studio API Key girin:') || '';
+  if(ANTHROPIC_API_KEY) localStorage.setItem('hwom_api_key', ANTHROPIC_API_KEY);
+}
 async function callClaude(messages, system='', max_tokens=1000) {
   const body = { model: 'claude-sonnet-4-20250514', max_tokens, messages };
   if(system) body.system = system;
