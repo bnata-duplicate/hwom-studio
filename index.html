@@ -2063,7 +2063,7 @@ function renderOKRMain() {
       <!-- AI ANALİZ SONUCU -->
       <div id="okr-ai-sonuc-${okr.id}" style="display:none;margin-top:14px;padding:14px;background:var(--bg3);border:1px solid rgba(56,217,192,.2);border-radius:8px;font-size:12px;line-height:1.7;color:var(--tx);"></div>
     </div>
-  \`;
+  `;
 }
 
 
@@ -2223,7 +2223,7 @@ function renderREList() {
   if(!el) return;
   el.innerHTML = RE_TEMPLATES.map(t=>{
     const isActive = selectedTemplate === t.id;
-    return `<div onclick="selectedTemplate='${t.id}';reStep=1;reOutput='';renderREMain();renderREList();" style="padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid ${isActive?t.renk:'var(--bd)'};background:${isActive?`rgba(${hexToRgb(t.renk)},0.1)`:'var(--bg3)'};margin-bottom:4px;">
+    return `<div onclick="selectedTemplate='${t.id}';reStep=1;reOutput='';renderREMain();renderREList();" style="padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid ${isActive?t.renk:'var(--bd)'};background:${isActive?('rgba('+hexToRgb(t.renk)+',0.1)'):'var(--bg3)'};margin-bottom:4px;">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
         <span style="font-size:14px;">${t.icon}</span>
         <span style="font-size:11px;font-weight:700;color:${isActive?t.renk:'var(--tx)'};">${t.name}</span>
