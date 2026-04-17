@@ -2060,6 +2060,26 @@ function okrYeni() {
   N('Yeni OKR şablonu açılıyor...');
 }
 
+// ═══ Markdown → HTML dönüştürücü ═══
+function mdToHtml(md) {
+  if(!md) return '';
+  return md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<div style="font-size:12px;font-weight:700;color:var(--ac2);margin:14px 0 6px;">$1</div>')
+    .replace(/^## (.+)$/gm,'<div style="font-size:13px;font-weight:700;color:var(--tx);margin:16px 0 8px;border-bottom:1px solid var(--bd);padding-bottom:4px;">$1</div>')
+    .replace(/^# (.+)$/gm,'<div style="font-size:14px;font-weight:800;color:var(--tx);margin:20px 0 10px;">$1</div>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^• (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
+    .replace(/^\d+\. (.+)$/gm,'<div style="margin:3px 0;">$&</div>')
+    .replace(/
+
+/g,'<div style="height:8px;"></div>')
+    .replace(/
+/g,'<br>');
+}
+
 // ═══ M09 REPORT ENGINE ═══
 const RE_TEMPLATES = [
   {id:'gm_brifing', icon:'🌅', name:'GM Sabah Brifing', desc:'Günlük operasyon özeti — 08:00 otomatik gönderim', renk:'#f0c060', periyot:'Günlük', alici:'GM',
@@ -2304,7 +2324,7 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
 
   clearInterval(interval);
   if(statusDiv) statusDiv.style.display='none';
-  if(outputEl){outputEl.style.display='block';outputEl.textContent=reOutput;}
+  if(outputEl){outputEl.style.display='block';outputEl.innerHTML=mdToHtml(reOutput);}
   if(btnsEl){btnsEl.style.display='flex';}
 }
 
@@ -2498,6 +2518,7 @@ function renderQOSSayfa(sayfa) {
               <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Denetçi</th>
               <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Skor</th>
               <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Durum</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Bulgular</th>
             </tr>
             ${qosDenetimler.map(d=>`
               <tr style="border-bottom:1px solid var(--bd);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
@@ -2505,12 +2526,16 @@ function renderQOSSayfa(sayfa) {
                 <td style="padding:8px;color:var(--mt2);">${d.tarih}</td>
                 <td style="padding:8px;color:var(--mt2);">${d.denetci||'-'}</td>
                 <td style="padding:8px;text-align:center;font-weight:700;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</td>
-                <td style="padding:8px;text-align:center;"><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(62,207,142,.15);color:var(--gn);">${d.sonuc_durumu||'-'}</span></td>
+                <td style="padding:8px;text-align:center;"><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${d.sonuc_durumu==='uygun'?'rgba(62,207,142,.15)':d.sonuc_durumu==='kismi_uygun'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${d.sonuc_durumu==='uygun'?'var(--gn)':d.sonuc_durumu==='kismi_uygun'?'var(--gold)':'var(--rd)'};">${d.sonuc_durumu||'-'}</span></td>
+                <td style="padding:8px;text-align:center;">
+                  <button onclick="qosBulguFormuAc('${d.id}','${d.tip}')" style="${S.btn}background:rgba(242,107,107,.12);border:1px solid rgba(242,107,107,.3);color:var(--rd);font-size:10px;padding:3px 8px;">+ Bulgu</button>
+                </td>
               </tr>`).join('')}
           </table>`
         }
       </div>
-      <div id="qos-denetim-form"></div>`;
+      <div id="qos-denetim-form"></div>
+      <div id="qos-bulgu-form"></div>`;
   }
 
   else if(sayfa === 'bulgu') {
@@ -2520,12 +2545,13 @@ function renderQOSSayfa(sayfa) {
         ${qosBulgular.length === 0 ?
           `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz bulgu yok</div>` :
           qosBulgular.map(b=>`
-            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div id="qos-bulgu-${b.id}" style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
               <div style="display:flex;align-items:flex-start;gap:10px;">
                 <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${b.oncelik==='kritik'?'rgba(242,107,107,.2)':b.oncelik==='yuksek'?'rgba(240,192,96,.2)':'rgba(62,207,142,.2)'};color:${b.oncelik==='kritik'?'var(--rd)':b.oncelik==='yuksek'?'var(--gold)':'var(--gn)'};flex-shrink:0;">${b.oncelik}</span>
                 <div style="flex:1;">
                   <div style="font-size:12px;font-weight:600;margin-bottom:2px;">${b.baslik}</div>
-                  <div style="font-size:10px;color:var(--mt2);">${b.iso_madde||''} · ${b.kategori||''}</div>
+                  <div style="font-size:10px;color:var(--mt2);">${b.iso_madde?b.iso_madde+' · ':''}${b.kategori||''} ${b.departman?'· '+b.departman:''}</div>
+                  ${b.aciklama?`<div style="font-size:10px;color:var(--mt);margin-top:4px;font-style:italic;">${b.aciklama}</div>`:''}
                 </div>
                 <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:4px 10px;">+ CAPA</button>
               </div>
@@ -2658,21 +2684,125 @@ async function qosDenetimKaydet() {
 }
 
 async function qosCapaEkle(bulguId) {
-  const aksiyon = prompt('CAPA aksiyonu girin:');
-  if(!aksiyon) return;
-  const sorumlu = prompt('Sorumlu kişi:');
+  // Bulgu satırının altında form açar
+  const formEl = document.getElementById('qos-capa-form-' + bulguId);
+  if(formEl) { formEl.remove(); return; } // toggle
+
+  const container = document.getElementById('qos-bulgu-' + bulguId);
+  if(!container) return;
+
+  const formHtml = `<div id="qos-capa-form-${bulguId}" style="${S.card}background:var(--bg3);border:1px solid rgba(124,106,247,.3);margin-top:8px;">
+    <div style="${S.cardTitle}">🔧 Düzeltici Faaliyet Ekle</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div style="grid-column:1/-1"><label style="${S.lbl}">Aksiyon</label>
+        <input id="capa-aksiyon-${bulguId}" style="${S.inp}" placeholder="Yapılacak düzeltici faaliyet..."></div>
+      <div><label style="${S.lbl}">Sorumlu</label>
+        <input id="capa-sorumlu-${bulguId}" style="${S.inp}" placeholder="Sorumlu kişi"></div>
+      <div><label style="${S.lbl}">Hedef Tarih</label>
+        <input id="capa-tarih-${bulguId}" type="date" style="${S.inp}" value="${new Date(Date.now()+14*86400000).toISOString().split('T')[0]}"></div>
+      <div><label style="${S.lbl}">Tip</label>
+        <select id="capa-tip-${bulguId}" style="${S.inp}padding:7px 10px;">
+          <option value="duzeltici">Düzeltici</option>
+          <option value="onleyici">Önleyici</option>
+          <option value="iyilestirici">İyileştirici</option>
+        </select></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="qosCapaKaydet('${bulguId}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
+      <button onclick="document.getElementById('qos-capa-form-${bulguId}').remove()" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
+    </div>
+  </div>`;
+  container.insertAdjacentHTML('afterend', formHtml);
+}
+
+async function qosCapaKaydet(bulguId) {
+  const aksiyon = document.getElementById('capa-aksiyon-'+bulguId)?.value;
+  if(!aksiyon){N('Aksiyon zorunlu');return;}
   const yeni = {
     bulgu_id:    bulguId,
-    tip:         'duzeltici',
+    tip:         document.getElementById('capa-tip-'+bulguId)?.value || 'duzeltici',
     aksiyon:     aksiyon,
-    sorumlu_ad:  sorumlu||null,
+    sorumlu_ad:  document.getElementById('capa-sorumlu-'+bulguId)?.value||null,
+    hedef_tarih: document.getElementById('capa-tarih-'+bulguId)?.value||null,
     durum:       'acik',
   };
+  // CDM uyumu: isletme_id ekle
+  if(AKTIF_ISLETME) yeni.isletme_id = AKTIF_ISLETME.id;
   const kayit = await dbInsert('capa', yeni);
   if(kayit){
-    N('✓ CAPA Supabase\'e kaydedildi');
+    N('✓ CAPA kaydedildi');
+    document.getElementById('qos-capa-form-'+bulguId)?.remove();
     await yukleDenetimler();
     qosGit('capa');
+  } else {
+    N('Kayıt hatası');
+  }
+}
+
+// Bulgu formu açıcı (denetim satırından çağrılır)
+function qosBulguFormuAc(denetimId, denetimTip) {
+  const formEl = document.getElementById('qos-bulgu-form');
+  if(!formEl) return;
+
+  formEl.innerHTML = `<div style="${S.card}border:1px solid rgba(242,107,107,.3);">
+    <div style="${S.cardTitle}">⚠ Bulgu Ekle — ${denetimTip} Denetimi</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div style="grid-column:1/-1"><label style="${S.lbl}">Bulgu Başlığı</label>
+        <input id="bulgu-baslik" style="${S.inp}" placeholder="Tespit edilen bulgunun kısa açıklaması..."></div>
+      <div><label style="${S.lbl}">Öncelik</label>
+        <select id="bulgu-oncelik" style="${S.inp}padding:7px 10px;">
+          <option value="kritik">Kritik</option>
+          <option value="yuksek">Yüksek</option>
+          <option value="orta">Orta</option>
+          <option value="dusuk">Düşük</option>
+        </select></div>
+      <div><label style="${S.lbl}">Kategori</label>
+        <select id="bulgu-kategori" style="${S.inp}padding:7px 10px;">
+          <option value="temizlik">Temizlik & Hijyen</option>
+          <option value="servis">Servis Kalitesi</option>
+          <option value="teknik">Teknik & Bakım</option>
+          <option value="personel">Personel & Eğitim</option>
+          <option value="prosedur">Prosedür Uyumu</option>
+          <option value="diger">Diğer</option>
+        </select></div>
+      <div><label style="${S.lbl}">ISO Maddesi (opsiyonel)</label>
+        <input id="bulgu-iso" style="${S.inp}" placeholder="Md.9.1"></div>
+      <div><label style="${S.lbl}">Departman</label>
+        <input id="bulgu-dept" style="${S.inp}" placeholder="Housekeeping, F&B..."></div>
+    </div>
+    <div style="margin-bottom:12px;"><label style="${S.lbl}">Açıklama</label>
+      <textarea id="bulgu-aciklama" style="${S.ta}" placeholder="Bulgunun detaylı açıklaması..."></textarea></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="qosBulguKaydet('${denetimId}')" style="${S.btn}background:var(--rd);color:#fff;">💾 Bulgu Kaydet</button>
+      <button onclick="document.getElementById('qos-bulgu-form').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
+    </div>
+  </div>`;
+  formEl.scrollIntoView({behavior:'smooth'});
+}
+
+async function qosBulguKaydet(denetimId) {
+  const baslik = document.getElementById('bulgu-baslik')?.value;
+  if(!baslik){N('Bulgu başlığı zorunlu');return;}
+  const yeni = {
+    denetim_id:  denetimId,
+    baslik:      baslik,
+    oncelik:     document.getElementById('bulgu-oncelik')?.value || 'orta',
+    kategori:    document.getElementById('bulgu-kategori')?.value || 'diger',
+    iso_madde:   document.getElementById('bulgu-iso')?.value||null,
+    departman:   document.getElementById('bulgu-dept')?.value||null,
+    aciklama:    document.getElementById('bulgu-aciklama')?.value||null,
+    durum:       'acik',
+  };
+  // CDM uyumu: isletme_id ekle
+  if(AKTIF_ISLETME) yeni.isletme_id = AKTIF_ISLETME.id;
+  const kayit = await dbInsert('bulgu', yeni);
+  if(kayit){
+    N('✓ Bulgu kaydedildi');
+    document.getElementById('qos-bulgu-form').innerHTML='';
+    await yukleDenetimler();
+    qosGit('bulgu');
+  } else {
+    N('Kayıt hatası');
   }
 }
 async function baslat() {
