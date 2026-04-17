@@ -2057,13 +2057,73 @@ function renderOKRMain() {
       <!-- AKSIYONLAR -->
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button onclick="okrSupabaseKaydet('${okr.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-        <button onclick="N('AI analizi başlatıldı → QX etkisi hesaplanıyor...')" style="${S.btn}background:rgba(56,217,192,.12);border:1px solid rgba(56,217,192,.3);color:var(--tl);">🤖 AI Analiz</button>
+        <button onclick="okrAIAnaliz('${okr.id}')" style="${S.btn}background:rgba(56,217,192,.12);border:1px solid rgba(56,217,192,.3);color:var(--tl);">🤖 AI Analiz</button>
         <button onclick="goTo(9);reSetTemplate('okr_raporu')" style="${S.btn}background:rgba(240,192,96,.12);border:1px solid rgba(240,192,96,.3);color:var(--gold);">📄 Rapor Üret</button>
       </div>
+      <!-- AI ANALİZ SONUCU -->
+      <div id="okr-ai-sonuc-${okr.id}" style="display:none;margin-top:14px;padding:14px;background:var(--bg3);border:1px solid rgba(56,217,192,.2);border-radius:8px;font-size:12px;line-height:1.7;color:var(--tx);"></div>
     </div>
-  `;
+  \`;
 }
 
+
+
+// ═══ OKR AI ANALİZ ═══
+async function okrAIAnaliz(okrId) {
+  const okr = OKR_DATA.find(o=>o.id===okrId);
+  if(!okr) return;
+
+  const sonucEl = document.getElementById('okr-ai-sonuc-'+okrId);
+  if(!sonucEl) return;
+
+  sonucEl.style.display = 'block';
+  sonucEl.innerHTML = '<div style="color:var(--mt2);">🤖 AI analiz yapıyor...</div>';
+
+  const overallProg = Math.round(okr.keyResults.reduce((s,kr)=>s+krProgress(kr),0)/okr.keyResults.length);
+  const qx = calcQX(QX_LAYERS);
+
+  const prompt = `Sen HumanSoft AI Atlas platformunun OKR Analiz Ajanısın. Aşağıdaki OKR verisini analiz et ve kısa, aksiyon odaklı bir değerlendirme yap.
+
+OKR: ${okr.objective}
+Layer: ${okr.qxLayer} | Owner: ${okr.owner} | Dönem: ${okr.quarter}
+Genel İlerleme: %${overallProg}
+Mevcut QX: ${qx} | Hedef: ${calcQXHedef(QX_LAYERS)}
+
+Key Results:
+${okr.keyResults.map((kr,i)=>`KR${i+1}: ${kr.text} — Başlangıç: ${kr.baslangic} → Hedef: ${kr.hedef} → Gerçek: ${kr.gercek||0} ${kr.birim} (%${krProgress(kr)})`).join('
+')}
+
+Şunları değerlendir:
+1. Genel durum ve risk seviyesi
+2. En kritik KR ve neden
+3. Bu hızla hedefe ulaşılır mı?
+4. 2-3 somut aksiyon önerisi
+5. QX üzerindeki tahmini etki
+
+Kısa ve net yaz, max 200 kelime. Türkçe.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || 'Analiz üretilemedi.';
+    sonucEl.innerHTML = mdToHtml(text);
+  } catch(e) {
+    sonucEl.innerHTML = `<div style="color:var(--mt2);">API bağlantısı kurulamadı. Lütfen API key kontrolü yapın.</div>`;
+  }
+}
 
 // ═══ OKR SUPABASE KAYIT ═══
 function okrKRGuncelleFonk(okrId, krIndex, yeniDeger) {
