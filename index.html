@@ -2033,27 +2033,97 @@ function renderOKRMain() {
                 <div style="width:22px;height:22px;border-radius:50%;background:rgba(124,106,247,.15);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac2);flex-shrink:0;margin-top:1px;">KR${i+1}</div>
                 <div>
                   <div style="font-size:12px;font-weight:700;margin-bottom:2px;">${kr.text}</div>
-                  <div style="font-size:10px;color:var(--mt);font-family:'Fira Code',monospace;">Başlangıç: ${kr.baslangic} ${kr.birim} · Hedef: ${kr.hedef} ${kr.birim} · Gerçek: <span style="color:${statusColor}">${gercek} ${kr.birim}</span></div>
+                  <div style="font-size:10px;color:var(--mt);font-family:'Fira Code',monospace;">Başlangıç: ${kr.baslangic} ${kr.birim} · Hedef: ${kr.hedef} ${kr.birim}</div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                    <span style="font-size:10px;color:var(--mt2);">Gerçek:</span>
+                    <input id="kr-gercek-${okr.id}-${i}" type="number" value="${gercek}" min="0" step="0.1"
+                      style="width:80px;padding:3px 8px;background:var(--bg);border:1px solid var(--b2);border-radius:5px;color:var(--tx);font-size:11px;font-family:'Fira Code',monospace;"
+                      oninput="okrKRGuncelleFonk('${okr.id}',${i},this.value)">
+                    <span style="font-size:10px;color:var(--mt2);">${kr.birim}</span>
+                    <span style="font-size:10px;color:${statusColor};font-weight:700;" id="kr-prog-${okr.id}-${i}">${prog}%</span>
+                  </div>
                 </div>
               </div>
               <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-                <div style="font-size:16px;font-weight:800;color:${statusColor};">${prog}%</div>
-                <div style="font-size:9px;color:var(--mt);">Kalan: ${Math.abs(kalan).toFixed(1)} ${kr.birim}</div>
+                <div style="font-size:16px;font-weight:800;color:${statusColor};" id="kr-prog-big-${okr.id}-${i}">${prog}%</div>
+                <div style="font-size:9px;color:var(--mt);">Kalan: <span id="kr-kalan-${okr.id}-${i}">${Math.abs(kalan).toFixed(1)}</span> ${kr.birim}</div>
               </div>
             </div>
-            <div style="height:6px;background:var(--bg);border-radius:3px;"><div style="height:100%;width:${prog}%;background:${prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'};border-radius:3px;transition:width .5s;"></div></div>
+            <div style="height:6px;background:var(--bg);border-radius:3px;"><div id="kr-bar-${okr.id}-${i}" style="height:100%;width:${prog}%;background:${prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'};border-radius:3px;transition:width .5s;"></div></div>
           </div>`;
         }).join('')}
       </div>
 
       <!-- AKSIYONLAR -->
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button onclick="N('OKR güncellendi ✓')" style="${S.btn}background:var(--ac);color:#fff;">📝 Güncelle</button>
+        <button onclick="okrSupabaseKaydet('${okr.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
         <button onclick="N('AI analizi başlatıldı → QX etkisi hesaplanıyor...')" style="${S.btn}background:rgba(56,217,192,.12);border:1px solid rgba(56,217,192,.3);color:var(--tl);">🤖 AI Analiz</button>
         <button onclick="goTo(9);reSetTemplate('okr_raporu')" style="${S.btn}background:rgba(240,192,96,.12);border:1px solid rgba(240,192,96,.3);color:var(--gold);">📄 Rapor Üret</button>
       </div>
     </div>
   `;
+}
+
+
+// ═══ OKR SUPABASE KAYIT ═══
+function okrKRGuncelleFonk(okrId, krIndex, yeniDeger) {
+  // Lokal güncelle — anlık görsel
+  const okr = OKR_DATA.find(o=>o.id===okrId);
+  if(!okr || !okr.keyResults[krIndex]) return;
+  okr.keyResults[krIndex].gercek = parseFloat(yeniDeger)||0;
+  const kr = okr.keyResults[krIndex];
+  const prog = krProgress(kr);
+  const statusColor = prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)';
+  const barEl = document.getElementById('kr-bar-'+okrId+'-'+krIndex);
+  const progEl = document.getElementById('kr-prog-'+okrId+'-'+krIndex);
+  const progBigEl = document.getElementById('kr-prog-big-'+okrId+'-'+krIndex);
+  const kalanEl = document.getElementById('kr-kalan-'+okrId+'-'+krIndex);
+  if(barEl) { barEl.style.width=prog+'%'; barEl.style.background=prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'; }
+  if(progEl) { progEl.textContent=prog+'%'; progEl.style.color=statusColor; }
+  if(progBigEl) { progBigEl.textContent=prog+'%'; progBigEl.style.color=statusColor; }
+  if(kalanEl) { kalanEl.textContent=Math.abs(kr.hedef-(parseFloat(yeniDeger)||0)).toFixed(1); }
+}
+
+async function okrSupabaseKaydet(okrId) {
+  const okr = OKR_DATA.find(o=>o.id===okrId);
+  if(!okr) return;
+
+  // AKTIF_OKRLER içinde bu OKR'ın Supabase id'sini bul
+  const supaOkr = AKTIF_OKRLER.find(o=>o.id===okrId || o.objective===okr.objective);
+
+  if(supaOkr) {
+    // Güncelle
+    const updates = {
+      key_results: JSON.stringify(okr.keyResults),
+      guncelleme_tarihi: new Date().toISOString(),
+    };
+    const kayit = await dbUpdate('okr', supaOkr.id, updates);
+    if(kayit) {
+      N('✓ OKR Supabase'e kaydedildi');
+    } else {
+      N('⚠ Supabase kaydı başarısız — lokal güncellendi');
+    }
+  } else if(AKTIF_ISLETME) {
+    // Yeni kayıt
+    const yeni = {
+      isletme_id:       AKTIF_ISLETME.id,
+      objective:        okr.objective,
+      sahip:            okr.owner,
+      x_layer:          okr.qxLayer,
+      key_results:      JSON.stringify(okr.keyResults),
+      donem:            okr.quarter,
+      guncelleme_tarihi: new Date().toISOString(),
+    };
+    const kayit = await dbInsert('okr', yeni);
+    if(kayit) {
+      N('✓ OKR Supabase'e eklendi');
+      AKTIF_OKRLER.push(kayit);
+    } else {
+      N('⚠ Supabase kaydı başarısız — lokal güncellendi');
+    }
+  } else {
+    N('✓ OKR lokal güncellendi (Supabase bağlantısı yok)');
+  }
 }
 
 function okrYeni() {
