@@ -2099,9 +2099,9 @@ async function okrSupabaseKaydet(okrId) {
     };
     const kayit = await dbUpdate('okr', supaOkr.id, updates);
     if(kayit) {
-      N('✓ OKR Supabase'e kaydedildi');
+      N('OKR Supabase kaydedildi');
     } else {
-      N('⚠ Supabase kaydı başarısız — lokal güncellendi');
+      N('Supabase kaydi basarisiz');
     }
   } else if(AKTIF_ISLETME) {
     // Yeni kayıt
@@ -2116,13 +2116,13 @@ async function okrSupabaseKaydet(okrId) {
     };
     const kayit = await dbInsert('okr', yeni);
     if(kayit) {
-      N('✓ OKR Supabase'e eklendi');
+      N('OKR Supabase eklendi');
       AKTIF_OKRLER.push(kayit);
     } else {
-      N('⚠ Supabase kaydı başarısız — lokal güncellendi');
+      N('Supabase kaydi basarisiz');
     }
   } else {
-    N('✓ OKR lokal güncellendi (Supabase bağlantısı yok)');
+    N('OKR lokal guncellendi');
   }
 }
 
