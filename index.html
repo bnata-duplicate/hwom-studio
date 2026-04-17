@@ -2073,11 +2073,8 @@ function mdToHtml(md) {
     .replace(/^• (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
     .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
     .replace(/^\d+\. (.+)$/gm,'<div style="margin:3px 0;">$&</div>')
-    .replace(/
-
-/g,'<div style="height:8px;"></div>')
-    .replace(/
-/g,'<br>');
+    .replace(/\n\n/g,'<div style="height:8px;"></div>')
+    .replace(/\n/g,'<br>');
 }
 
 // ═══ M09 REPORT ENGINE ═══
