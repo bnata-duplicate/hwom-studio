@@ -2517,7 +2517,7 @@ function renderQOSSayfa(sayfa) {
                       <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'} · ${c.tip||'-'}</div>
                     </div>
                     <span style="font-size:9px;padding:2px 6px;border-radius:20px;background:${c.durum==='tamamlandi'?'rgba(62,207,142,.15)':c.durum==='devam'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${c.durum==='tamamlandi'?'var(--gn)':c.durum==='devam'?'var(--gold)':'var(--rd)'};">${c.durum}</span>
-                    <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">✏</button>
+                    <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">Dz</button>
                   </div>
                   <div id="qos-capa-edit-${c.id}"></div>
                 </div>`).join('');
@@ -2531,7 +2531,7 @@ function renderQOSSayfa(sayfa) {
                     ${b.aciklama?`<div style="font-size:10px;color:var(--mt);font-style:italic;">${b.aciklama}</div>`:''}
                   </div>
                   <span style="font-size:9px;padding:2px 6px;border-radius:20px;background:${b.durum==='kapali'?'rgba(62,207,142,.15)':'rgba(242,107,107,.1)'};color:${b.durum==='kapali'?'var(--gn)':'var(--mt2)'};">${b.durum||'acik'}</span>
-                  <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">✏</button>
+                  <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">Dz</button>
                   <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:2px 6px;">+ CAPA</button>
                 </div>
                 <div id="qos-bulgu-edit-${b.id}"></div>
@@ -2552,7 +2552,7 @@ function renderQOSSayfa(sayfa) {
               <div style="font-size:10px;color:var(--mt);">${dBulgular.length} bulgu · ${bCapalar_count(d.id)} CAPA</div>
             </div>
             <div style="font-size:22px;font-weight:800;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</div>
-            <button onclick="qosDenetimDuzenle('${d.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;">✏ Düzenle</button>
+            <button onclick="qosDenetimDuzenle('${d.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;">Düzenle</button>
             <button onclick="qosBulguFormuAc('${d.id}','${d.tip}')" style="${S.btn}background:rgba(242,107,107,.12);border:1px solid rgba(242,107,107,.3);color:var(--rd);font-size:10px;padding:3px 8px;">+ Bulgu</button>
           </div>
           <div id="qos-denetim-edit-${d.id}"></div>
@@ -2592,7 +2592,7 @@ function renderQOSSayfa(sayfa) {
                   ${b.aciklama?`<div style="font-size:10px;color:var(--mt);margin-top:4px;font-style:italic;">${b.aciklama}</div>`:''}
                 </div>
                 <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${b.durum==='kapali'?'rgba(62,207,142,.15)':'rgba(242,107,107,.12)'};color:${b.durum==='kapali'?'var(--gn)':'var(--rd)'};margin-right:4px;">${b.durum||'acik'}</span>
-                <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">✏ Düzenle</button>
+                <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">Düzenle</button>
                 <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:4px 10px;">+ CAPA</button>
               </div>
               <div id="qos-bulgu-edit-${b.id}"></div>
@@ -2614,7 +2614,7 @@ function renderQOSSayfa(sayfa) {
                   <div style="font-size:12px;font-weight:600;margin-bottom:3px;">${c.aksiyon}</div>
                   <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'} · Tip: ${c.tip||'-'}</div>
                 </div>
-                <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">✏ Düzenle</button>
+                <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">Düzenle</button>
                 <span style="font-size:9px;padding:2px 8px;border-radius:20px;flex-shrink:0;background:${c.durum==='tamamlandi'?'rgba(62,207,142,.15)':c.durum==='devam'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${c.durum==='tamamlandi'?'var(--gn)':c.durum==='devam'?'var(--gold)':'var(--rd)'};">${c.durum}</span>
               </div>
               <div id="qos-capa-edit-${c.id}"></div>
@@ -2992,7 +2992,7 @@ function qosBulguFormuAc(denetimId, denetimTip) {
       <textarea id="bulgu-aciklama" style="${S.ta}" placeholder="Bulgunun detaylı açıklaması..."></textarea></div>
     <div style="display:flex;gap:8px;">
       <button onclick="qosBulguKaydet('${denetimId}')" style="${S.btn}background:var(--rd);color:#fff;">💾 Bulgu Kaydet</button>
-      <button onclick="document.getElementById('qos-bulgu-form').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
+      <button onclick="(document.getElementById('qos-bulgu-form-${denetimId}')||document.getElementById('qos-bulgu-form')).innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
     </div>
   </div>`;
   formEl.scrollIntoView({behavior:'smooth'});
@@ -3016,7 +3016,7 @@ async function qosBulguKaydet(denetimId) {
   const kayit = await dbInsert('bulgu', yeni);
   if(kayit){
     N('✓ Bulgu kaydedildi');
-    document.getElementById('qos-bulgu-form').innerHTML='';
+    (document.getElementById('qos-bulgu-form-'+denetimId)||document.getElementById('qos-bulgu-form')).innerHTML='';
     await yukleDenetimler();
   } else {
     N('Kayıt hatası');
