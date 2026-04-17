@@ -2068,40 +2068,20 @@ function renderOKRMain() {
 
 
 
+
+
 // ═══ OKR AI ANALİZ ═══
 async function okrAIAnaliz(okrId) {
   const okr = OKR_DATA.find(o=>o.id===okrId);
   if(!okr) return;
-
   const sonucEl = document.getElementById('okr-ai-sonuc-'+okrId);
   if(!sonucEl) return;
-
   sonucEl.style.display = 'block';
-  sonucEl.innerHTML = '<div style="color:var(--mt2);">🤖 AI analiz yapıyor...</div>';
-
+  sonucEl.innerHTML = '<div style="color:var(--mt2);">AI analiz yapıyor...</div>';
   const overallProg = Math.round(okr.keyResults.reduce((s,kr)=>s+krProgress(kr),0)/okr.keyResults.length);
   const qx = calcQX(QX_LAYERS);
-
-  const prompt = `Sen HumanSoft AI Atlas platformunun OKR Analiz Ajanısın. Aşağıdaki OKR verisini analiz et ve kısa, aksiyon odaklı bir değerlendirme yap.
-
-OKR: ${okr.objective}
-Layer: ${okr.qxLayer} | Owner: ${okr.owner} | Dönem: ${okr.quarter}
-Genel İlerleme: %${overallProg}
-Mevcut QX: ${qx} | Hedef: ${calcQXHedef(QX_LAYERS)}
-
-Key Results:
-${okr.keyResults.map((kr,i)=>`KR${i+1}: ${kr.text} — Başlangıç: ${kr.baslangic} → Hedef: ${kr.hedef} → Gerçek: ${kr.gercek||0} ${kr.birim} (%${krProgress(kr)})`).join('
-')}
-
-Şunları değerlendir:
-1. Genel durum ve risk seviyesi
-2. En kritik KR ve neden
-3. Bu hızla hedefe ulaşılır mı?
-4. 2-3 somut aksiyon önerisi
-5. QX üzerindeki tahmini etki
-
-Kısa ve net yaz, max 200 kelime. Türkçe.`;
-
+  const krText = okr.keyResults.map((kr,i)=>'KR'+(i+1)+': '+kr.text+' — '+kr.baslangic+' > '+kr.hedef+' '+kr.birim+' (Gercek: '+(kr.gercek||0)+', %'+krProgress(kr)+')').join('\n');
+  const prompt = 'Sen HumanSoft OKR Analiz Ajanisın.\n\nOKR: '+okr.objective+'\nLayer: '+okr.qxLayer+' | Owner: '+okr.owner+'\nGenel Ilerleme: %'+overallProg+'\nQX: '+qx+' | Hedef: '+calcQXHedef(QX_LAYERS)+'\n\nKey Results:\n'+krText+'\n\nSunlari degerlendir:\n1. Genel durum ve risk\n2. En kritik KR\n3. Bu hizla hedefe ulasilir mi?\n4. 2-3 somut aksiyon onerisi\n5. QX etkisi\n\nKisa ve net, max 150 kelime, Turkce.';
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -2111,17 +2091,13 @@ Kısa ve net yaz, max 200 kelime. Türkçe.`;
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        messages: [{role: 'user', content: prompt}]
-      })
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
     const data = await resp.json();
-    const text = data.content?.[0]?.text || 'Analiz üretilemedi.';
+    const text = data.content?.[0]?.text || 'Analiz uretilemedi.';
     sonucEl.innerHTML = mdToHtml(text);
   } catch(e) {
-    sonucEl.innerHTML = `<div style="color:var(--mt2);">API bağlantısı kurulamadı. Lütfen API key kontrolü yapın.</div>`;
+    sonucEl.innerHTML = '<div style="color:var(--mt2);">API baglantisi kurulamadi.</div>';
   }
 }
 
