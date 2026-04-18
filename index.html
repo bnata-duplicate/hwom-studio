@@ -3199,17 +3199,28 @@ async function ipExcelOku(event) {
   const file = event.target.files?.[0];
   if(!file) return;
   N(`📂 ${file.name} okunuyor...`);
-  // SheetJS ile parse
   const buf = await file.arrayBuffer();
   try {
     const XLSX = window.XLSX;
     if(!XLSX) { N('❌ XLSX kütüphanesi yüklü değil'); return; }
     const wb = XLSX.read(buf, {type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
+
+    // İŞ PLANI sheet'ini bul
+    const ipSheet = wb.SheetNames.find(n => n.includes('İŞ') || n.includes('IS') || n.includes('PLAN'))
+                 || wb.SheetNames[0];
+    N(`📋 Sheet: "${ipSheet}" okunuyor...`);
+    const ws = wb.Sheets[ipSheet];
     const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
     if(rows.length < 2) { N('❌ Excel boş veya hatalı'); return; }
-    // Header satırını atla
-    const dataRows = rows.slice(1).filter(r => r[4] && String(r[4]).trim());
+
+    // Header satırını bul
+    let startRow = 1;
+    for(let i=0;i<Math.min(5,rows.length);i++){
+      const r = rows[i].map(v=>String(v||'').toLowerCase());
+      if(r.some(v=>v.includes('departman')||v.includes('faaliyet')||v.includes('görev'))) { startRow=i+1; break; }
+    }
+
+    const dataRows = rows.slice(startRow).filter(r => r[4] && String(r[4]).trim());
     let sayac = 0;
     for(const row of dataRows.slice(0,500)) {
       const yeni = {
@@ -3558,12 +3569,28 @@ async function kpiExcelOku(event) {
     const XLSX = window.XLSX;
     if(!XLSX) { N('❌ XLSX kütüphanesi yüklü değil'); return; }
     const wb = XLSX.read(buf,{type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
+
+    // KPI MATRİSİ sheet'ini bul, yoksa ilk sheet
+    const kpiSheet = wb.SheetNames.find(n => n.includes('KPI') && n.includes('MAT')) 
+                  || wb.SheetNames.find(n => n.toLowerCase().includes('kpi'))
+                  || wb.SheetNames[0];
+    N(`📋 Sheet: "${kpiSheet}" okunuyor...`);
+    const ws = wb.Sheets[kpiSheet];
     const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+    // Header satırını bul (Departman veya KPI Adı geçen satır)
+    let startRow = 1;
+    for(let i=0;i<Math.min(5,rows.length);i++){
+      const r = rows[i].map(v=>String(v||'').toLowerCase());
+      if(r.some(v=>v.includes('departman')||v.includes('kpi'))) { startRow=i+1; break; }
+    }
+
     let sayac=0;
-    for(const row of rows.slice(1).slice(0,300)) {
+    for(const row of rows.slice(startRow).slice(0,400)) {
       const kpiAdi = String(row[2]||'').trim();
-      if(!kpiAdi) continue;
+      // Departman başlık satırlarını ve boş satırları atla
+      if(!kpiAdi || kpiAdi.length < 3) continue;
+      if(String(row[0]||'').trim() === kpiAdi) continue; // merged cell başlık
       const yeni = {
         isletme_id: AKTIF_ISLETME?.id,
         departman: String(row[1]||'').trim()||null,
