@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HWOM Studio v4.0 — HumanSoft AI Atlas</title>
+<title>HWOM Studio v6.0 — HumanSoft AI Atlas</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fira+Code:wght@400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ═══ SUPABASE CONFIG ═══
-const SUPA_URL = 'https://cqdveiigszgabzmiwvaf.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHZlaWlnc3pnYWJ6bWl3dmFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODcxNDMsImV4cCI6MjA5MTg2MzE0M30.AjwcGTi0bBsJlyiGiXxGPABGCuSm3AnwefhV6od2APg';
+const SUPA_URL = 'https://cqdveilgszagabarnivvaf.supabase.co';
+const SUPA_KEY = 'sb_publishable_pd5x1g6ZGu4KiNLaTmw_UA_JJCva0wn';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ═══ CDM HELPERS ═══
@@ -21,9 +22,7 @@ async function dbGet(table, filters={}) {
   return data||[];
 }
 async function dbInsert(table, row) {
-  console.log('dbInsert çağrıldı:', table, row);
   const {data,error} = await supa.from(table).insert(row).select();
-  console.log('dbInsert sonuç — data:', data, 'error:', error);
   if(error){console.error('DB insert hata:',error);return null;}
   return data?.[0]||null;
 }
@@ -46,7 +45,6 @@ let AKTIF_OKRLER = [];
 
 async function isletmeYukle() {
   const isletmeler = await dbGet('isletme', {aktif:true});
-  console.log('isletmeler:', isletmeler);
   if(isletmeler.length > 0) {
     AKTIF_ISLETME = isletmeler[0];
     AKTIF_DEPARTMANLAR = await dbGet('departman', {isletme_id: AKTIF_ISLETME.id});
@@ -384,6 +382,8 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     <div class="tb-step" id="tab8" onclick="goTo(8)"><span class="step-n">8</span>OKR & QX</div>
     <div class="tb-step" id="tab9" onclick="goTo(9)"><span class="step-n">9</span>Reports</div>
     <div class="tb-step" id="tab10" onclick="goTo(10)"><span class="step-n">10</span>Quality OS</div>
+    <div class="tb-step" id="tab11" onclick="goTo(11)"><span class="step-n">11</span>İş Planı</div>
+    <div class="tb-step" id="tab12" onclick="goTo(12)"><span class="step-n">12</span>KPI Takip</div>
   </div>
   <div class="tb-right">
     <div class="live-pill"><div class="live-dot"></div><span id="clockDisplay">—</span></div>
@@ -624,11 +624,11 @@ let openMods = {};
 
 // ══ NAVIGATION ══
 function goTo(n) {
-  for(let i=0;i<=10;i++){
+  for(let i=0;i<=12;i++){
     const s=document.getElementById('s'+i);
     if(s) s.classList.toggle('active', i===n);
   }
-  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10'].forEach((id,i)=>{
+  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10','tab11','tab12'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el){
       el.classList.toggle('active',i===n);
@@ -645,6 +645,8 @@ function goTo(n) {
   if(n===8) initOKR();
   if(n===9) initRE();
   if(n===10) initQualityOS();
+  if(n===11) initIsPlani();
+  if(n===12) initKPITakip();
 }
 
 function loadDemo() {
@@ -1234,27 +1236,79 @@ function init(){
   </div>
 </div>
 
+<!-- ═══ M11 İŞ PLANI TAKİP ═══ -->
+<div class="screen" id="s11">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <!-- Sidebar -->
+    <div style="width:220px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">İş Planı</div>
+      <div id="ip-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Hızlı Ekle</div>
+        <button onclick="ipYeniFaaliyet()" style="width:100%;padding:8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;background:var(--ac);color:#fff;">+ Faaliyet Ekle</button>
+        <button onclick="ipExcelImport()" style="width:100%;padding:8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--bd);font-family:inherit;background:transparent;color:var(--mt2);margin-top:6px;">↑ Excel İmport</button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Filtre</div>
+        <select id="ip-dept-filtre" onchange="ipFiltrele()" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;">
+          <option value="">Tüm Departmanlar</option>
+        </select>
+        <select id="ip-durum-filtre" onchange="ipFiltrele()" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;margin-top:6px;">
+          <option value="">Tüm Durumlar</option>
+          <option value="baslayacak">Başlayacak</option>
+          <option value="devam">Devam Ediyor</option>
+          <option value="tamamlandi">Tamamlandı</option>
+          <option value="beklemede">Beklemede</option>
+          <option value="iptal">İptal</option>
+        </select>
+      </div>
+    </div>
+    <!-- Ana içerik -->
+    <div style="flex:1;overflow-y:auto;padding:20px;" id="ip-main"></div>
+  </div>
+  <!-- Excel import gizli input -->
+  <input type="file" id="ip-excel-input" accept=".xlsx,.xls" style="display:none" onchange="ipExcelOku(event)">
+</div>
+
+<!-- ═══ M12 KPI CANLI TAKİP ═══ -->
+<div class="screen" id="s12">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <!-- Sidebar -->
+    <div style="width:220px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">KPI Takip</div>
+      <div id="kpi-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Veri Girişi</div>
+        <button onclick="kpiGercekGirisFormu()" style="width:100%;padding:8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;background:var(--ac);color:#fff;">+ Gerçekleşen Gir</button>
+        <button onclick="kpiExcelImport()" style="width:100%;padding:8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--bd);font-family:inherit;background:transparent;color:var(--mt2);margin-top:6px;">↑ Excel İmport</button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Dönem</div>
+        <select id="kpi-donem" onchange="kpiDonemdegis()" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;">
+          <option value="haftalik">Bu Hafta</option>
+          <option value="aylik" selected>Bu Ay</option>
+          <option value="q1">Q1</option><option value="q2">Q2</option>
+          <option value="q3">Q3</option><option value="q4">Q4</option>
+          <option value="yillik">Yıllık</option>
+        </select>
+        <select id="kpi-xlayer-filtre" onchange="kpiXLayerFiltrele()" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;margin-top:6px;">
+          <option value="">Tüm X-Layer</option>
+          <option value="CX">CX — Misafir</option>
+          <option value="EX">EX — Çalışan</option>
+          <option value="OX">OX — Operasyon</option>
+          <option value="BX">BX — Marka</option>
+          <option value="QX">QX — Kalite</option>
+        </select>
+      </div>
+    </div>
+    <!-- Ana içerik -->
+    <div style="flex:1;overflow-y:auto;padding:20px;" id="kpi-main"></div>
+  </div>
+  <input type="file" id="kpi-excel-input" accept=".xlsx,.xls" style="display:none" onchange="kpiExcelOku(event)">
+</div>
+
 <script>
-// ═══ ANTHROPIC API CONFIG ═══
-let ANTHROPIC_API_KEY = localStorage.getItem('hwom_api_key') || '';
-if(!ANTHROPIC_API_KEY) {
-  ANTHROPIC_API_KEY = prompt('HWOM Studio API Key girin:') || '';
-  if(ANTHROPIC_API_KEY) localStorage.setItem('hwom_api_key', ANTHROPIC_API_KEY);
-}
-async function callClaude(messages, system='', max_tokens=1000) {
-  const body = { model: 'claude-sonnet-4-20250514', max_tokens, messages };
-  if(system) body.system = system;
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body)
-  });
-  return await resp.json();
-}
+// ═══ ORTAK STILLER ═══
 const S = {
   card: 'background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:14px;',
   cardTitle: 'font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;',
@@ -1510,7 +1564,7 @@ async function afAIAnaliz() {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
@@ -2033,154 +2087,31 @@ function renderOKRMain() {
                 <div style="width:22px;height:22px;border-radius:50%;background:rgba(124,106,247,.15);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac2);flex-shrink:0;margin-top:1px;">KR${i+1}</div>
                 <div>
                   <div style="font-size:12px;font-weight:700;margin-bottom:2px;">${kr.text}</div>
-                  <div style="font-size:10px;color:var(--mt);font-family:'Fira Code',monospace;">Başlangıç: ${kr.baslangic} ${kr.birim} · Hedef: ${kr.hedef} ${kr.birim}</div>
-                  <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                    <span style="font-size:10px;color:var(--mt2);">Gerçek:</span>
-                    <input id="kr-gercek-${okr.id}-${i}" type="number" value="${gercek}" min="0" step="0.1"
-                      style="width:80px;padding:3px 8px;background:var(--bg);border:1px solid var(--b2);border-radius:5px;color:var(--tx);font-size:11px;font-family:'Fira Code',monospace;"
-                      oninput="okrKRGuncelleFonk('${okr.id}',${i},this.value)">
-                    <span style="font-size:10px;color:var(--mt2);">${kr.birim}</span>
-                    <span style="font-size:10px;color:${statusColor};font-weight:700;" id="kr-prog-${okr.id}-${i}">${prog}%</span>
-                  </div>
+                  <div style="font-size:10px;color:var(--mt);font-family:'Fira Code',monospace;">Başlangıç: ${kr.baslangic} ${kr.birim} · Hedef: ${kr.hedef} ${kr.birim} · Gerçek: <span style="color:${statusColor}">${gercek} ${kr.birim}</span></div>
                 </div>
               </div>
               <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-                <div style="font-size:16px;font-weight:800;color:${statusColor};" id="kr-prog-big-${okr.id}-${i}">${prog}%</div>
-                <div style="font-size:9px;color:var(--mt);">Kalan: <span id="kr-kalan-${okr.id}-${i}">${Math.abs(kalan).toFixed(1)}</span> ${kr.birim}</div>
+                <div style="font-size:16px;font-weight:800;color:${statusColor};">${prog}%</div>
+                <div style="font-size:9px;color:var(--mt);">Kalan: ${Math.abs(kalan).toFixed(1)} ${kr.birim}</div>
               </div>
             </div>
-            <div style="height:6px;background:var(--bg);border-radius:3px;"><div id="kr-bar-${okr.id}-${i}" style="height:100%;width:${prog}%;background:${prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'};border-radius:3px;transition:width .5s;"></div></div>
+            <div style="height:6px;background:var(--bg);border-radius:3px;"><div style="height:100%;width:${prog}%;background:${prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'};border-radius:3px;transition:width .5s;"></div></div>
           </div>`;
         }).join('')}
       </div>
 
       <!-- AKSIYONLAR -->
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button onclick="okrSupabaseKaydet('${okr.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-        <button onclick="okrAIAnaliz('${okr.id}')" style="${S.btn}background:rgba(56,217,192,.12);border:1px solid rgba(56,217,192,.3);color:var(--tl);">🤖 AI Analiz</button>
+        <button onclick="N('OKR güncellendi ✓')" style="${S.btn}background:var(--ac);color:#fff;">📝 Güncelle</button>
+        <button onclick="N('AI analizi başlatıldı → QX etkisi hesaplanıyor...')" style="${S.btn}background:rgba(56,217,192,.12);border:1px solid rgba(56,217,192,.3);color:var(--tl);">🤖 AI Analiz</button>
         <button onclick="goTo(9);reSetTemplate('okr_raporu')" style="${S.btn}background:rgba(240,192,96,.12);border:1px solid rgba(240,192,96,.3);color:var(--gold);">📄 Rapor Üret</button>
       </div>
-      <!-- AI ANALİZ SONUCU -->
-      <div id="okr-ai-sonuc-${okr.id}" style="display:none;margin-top:14px;padding:14px;background:var(--bg3);border:1px solid rgba(56,217,192,.2);border-radius:8px;font-size:12px;line-height:1.7;color:var(--tx);"></div>
     </div>
   `;
 }
 
-
-
-
-
-// ═══ OKR AI ANALİZ ═══
-async function okrAIAnaliz(okrId) {
-  const okr = OKR_DATA.find(o=>o.id===okrId);
-  if(!okr) return;
-  const sonucEl = document.getElementById('okr-ai-sonuc-'+okrId);
-  if(!sonucEl) return;
-  sonucEl.style.display = 'block';
-  sonucEl.innerHTML = '<div style="color:var(--mt2);">AI analiz yapıyor...</div>';
-  const overallProg = Math.round(okr.keyResults.reduce((s,kr)=>s+krProgress(kr),0)/okr.keyResults.length);
-  const qx = calcQX(QX_LAYERS);
-  const krText = okr.keyResults.map((kr,i)=>'KR'+(i+1)+': '+kr.text+' — '+kr.baslangic+' > '+kr.hedef+' '+kr.birim+' (Gercek: '+(kr.gercek||0)+', %'+krProgress(kr)+')').join('\n');
-  const prompt = 'Sen HumanSoft OKR Analiz Ajanisın.\n\nOKR: '+okr.objective+'\nLayer: '+okr.qxLayer+' | Owner: '+okr.owner+'\nGenel Ilerleme: %'+overallProg+'\nQX: '+qx+' | Hedef: '+calcQXHedef(QX_LAYERS)+'\n\nKey Results:\n'+krText+'\n\nSunlari degerlendir:\n1. Genel durum ve risk\n2. En kritik KR\n3. Bu hizla hedefe ulasilir mi?\n4. 2-3 somut aksiyon onerisi\n5. QX etkisi\n\nKisa ve net, max 150 kelime, Turkce.';
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const text = data.content?.[0]?.text || 'Analiz uretilemedi.';
-    sonucEl.innerHTML = mdToHtml(text);
-  } catch(e) {
-    sonucEl.innerHTML = '<div style="color:var(--mt2);">API baglantisi kurulamadi.</div>';
-  }
-}
-
-// ═══ OKR SUPABASE KAYIT ═══
-function okrKRGuncelleFonk(okrId, krIndex, yeniDeger) {
-  // Lokal güncelle — anlık görsel
-  const okr = OKR_DATA.find(o=>o.id===okrId);
-  if(!okr || !okr.keyResults[krIndex]) return;
-  okr.keyResults[krIndex].gercek = parseFloat(yeniDeger)||0;
-  const kr = okr.keyResults[krIndex];
-  const prog = krProgress(kr);
-  const statusColor = prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)';
-  const barEl = document.getElementById('kr-bar-'+okrId+'-'+krIndex);
-  const progEl = document.getElementById('kr-prog-'+okrId+'-'+krIndex);
-  const progBigEl = document.getElementById('kr-prog-big-'+okrId+'-'+krIndex);
-  const kalanEl = document.getElementById('kr-kalan-'+okrId+'-'+krIndex);
-  if(barEl) { barEl.style.width=prog+'%'; barEl.style.background=prog>=70?'var(--gn)':prog>=40?'var(--gold)':'var(--rd)'; }
-  if(progEl) { progEl.textContent=prog+'%'; progEl.style.color=statusColor; }
-  if(progBigEl) { progBigEl.textContent=prog+'%'; progBigEl.style.color=statusColor; }
-  if(kalanEl) { kalanEl.textContent=Math.abs(kr.hedef-(parseFloat(yeniDeger)||0)).toFixed(1); }
-}
-
-async function okrSupabaseKaydet(okrId) {
-  const okr = OKR_DATA.find(o=>o.id===okrId);
-  if(!okr) return;
-
-  // AKTIF_OKRLER içinde bu OKR'ın Supabase id'sini bul
-  const supaOkr = AKTIF_OKRLER.find(o=>o.id===okrId || o.objective===okr.objective);
-
-  if(supaOkr) {
-    // Güncelle
-    const updates = {
-      key_results: JSON.stringify(okr.keyResults),
-      guncelleme_tarihi: new Date().toISOString(),
-    };
-    const kayit = await dbUpdate('okr', supaOkr.id, updates);
-    if(kayit) {
-      N('OKR Supabase kaydedildi');
-    } else {
-      N('Supabase kaydi basarisiz');
-    }
-  } else if(AKTIF_ISLETME) {
-    // Yeni kayıt
-    const yeni = {
-      isletme_id:       AKTIF_ISLETME.id,
-      objective:        okr.objective,
-      sahip:            okr.owner,
-      x_layer:          okr.qxLayer,
-      key_results:      JSON.stringify(okr.keyResults),
-      donem:            okr.quarter,
-      guncelleme_tarihi: new Date().toISOString(),
-    };
-    const kayit = await dbInsert('okr', yeni);
-    if(kayit) {
-      N('OKR Supabase eklendi');
-      AKTIF_OKRLER.push(kayit);
-    } else {
-      N('Supabase kaydi basarisiz');
-    }
-  } else {
-    N('OKR lokal guncellendi');
-  }
-}
-
 function okrYeni() {
   N('Yeni OKR şablonu açılıyor...');
-}
-
-// ═══ Markdown → HTML dönüştürücü ═══
-function mdToHtml(md) {
-  if(!md) return '';
-  return md
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^### (.+)$/gm,'<div style="font-size:12px;font-weight:700;color:var(--ac2);margin:14px 0 6px;">$1</div>')
-    .replace(/^## (.+)$/gm,'<div style="font-size:13px;font-weight:700;color:var(--tx);margin:16px 0 8px;border-bottom:1px solid var(--bd);padding-bottom:4px;">$1</div>')
-    .replace(/^# (.+)$/gm,'<div style="font-size:14px;font-weight:800;color:var(--tx);margin:20px 0 10px;">$1</div>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^• (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
-    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac2);">•</span><span>$1</span></div>')
-    .replace(/^\d+\. (.+)$/gm,'<div style="margin:3px 0;">$&</div>')
-    .replace(/\n\n/g,'<div style="height:8px;"></div>')
-    .replace(/\n/g,'<br>');
 }
 
 // ═══ M09 REPORT ENGINE ═══
@@ -2197,25 +2128,15 @@ const RE_TEMPLATES = [
     sections:['Denetim Skoru','Kritik Bulgular','ISO 9001:2015 Madde Eşlemesi','Düzeltici Faaliyet Planı','QX Tahmini Etki']},
 ];
 
-let selectedTemplate = 'gm_brifing';
+let selectedTemplate = 're_gm_brifing';
 let reStep = 1;
 let reGenerating = false;
 let reOutput = '';
-let reRaporlar = [];  // Supabase'den gelen arşiv listesi
-
-async function yuklereRaporlar() {
-  if(!AKTIF_ISLETME) return;
-  const veriler = await dbGet('rapor_arsiv', {isletme_id: AKTIF_ISLETME.id});
-  // en yeni 10 rapor, tarihe göre ters sıra
-  reRaporlar = (veriler||[]).sort((a,b)=> new Date(b.olusturma_tarihi||0) - new Date(a.olusturma_tarihi||0)).slice(0,10);
-  renderREHistory();
-}
 
 function initRE() {
   renderREList();
   renderREHistory();
   renderREMain();
-  yuklereRaporlar();
 }
 
 function renderREList() {
@@ -2223,7 +2144,7 @@ function renderREList() {
   if(!el) return;
   el.innerHTML = RE_TEMPLATES.map(t=>{
     const isActive = selectedTemplate === t.id;
-    return `<div onclick="selectedTemplate='${t.id}';reStep=1;reOutput='';renderREMain();renderREList();" style="padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid ${isActive?t.renk:'var(--bd)'};background:${isActive?('rgba('+hexToRgb(t.renk)+',0.1)'):'var(--bg3)'};margin-bottom:4px;">
+    return `<div onclick="selectedTemplate='${t.id}';reStep=1;reOutput='';renderREMain();renderREList();" style="padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid ${isActive?t.renk:'var(--bd)'};background:${isActive?`rgba(${hexToRgb(t.renk)},0.1)`:'var(--bg3)'};margin-bottom:4px;">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
         <span style="font-size:14px;">${t.icon}</span>
         <span style="font-size:11px;font-weight:700;color:${isActive?t.renk:'var(--tx)'};">${t.name}</span>
@@ -2243,29 +2164,11 @@ function hexToRgb(hex) {
 function renderREHistory() {
   const el = document.getElementById('re-history');
   if(!el) return;
-  if(reRaporlar.length === 0) {
-    el.innerHTML = `<div style="font-size:10px;color:var(--mt);padding:6px 0;">Henüz arşivlenmiş rapor yok</div>`;
-    return;
-  }
-  const ikonlar = {'gm_brifing':'🌅','aylik_qx':'📊','cfo_ozet':'₺','okr_raporu':'🎯','lqa_ozet':'🔍'};
-  el.innerHTML = reRaporlar.map((r,i) => {
-    const ikon = ikonlar[r.sablon_id] || '📄';
-    const tarih = r.olusturma_tarihi ? new Date(r.olusturma_tarihi).toLocaleDateString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '-';
-    const isLast = i === reRaporlar.length - 1;
-    return `<div onclick="reRaporGoster('${r.id}')" style="font-size:10px;padding:6px 0;${isLast?'':'border-bottom:1px solid var(--bd);'}cursor:pointer;" onmouseover="this.style.color='var(--ac2)'" onmouseout="this.style.color='var(--mt2)'">
-      ${ikon} ${r.sablon_adi||r.sablon_id} — ${tarih} <span style="color:var(--gn);margin-left:4px;">✓</span>
-    </div>`;
-  }).join('');
-}
-
-function reRaporGoster(id) {
-  const r = reRaporlar.find(x=>x.id===id);
-  if(!r) return;
-  selectedTemplate = r.sablon_id || selectedTemplate;
-  reOutput = r.icerik || '';
-  reStep = 4;
-  renderREList();
-  renderREMain();
+  el.innerHTML = `
+    <div style="font-size:10px;padding:5px 0;border-bottom:1px solid var(--bd);">🌅 GM Brifing — 14 Nis 08:00 <span style="color:var(--gn);margin-left:4px;">✓</span></div>
+    <div style="font-size:10px;padding:5px 0;border-bottom:1px solid var(--bd);">📊 Aylık QX — Mar 2026 <span style="color:var(--gn);margin-left:4px;">✓</span></div>
+    <div style="font-size:10px;padding:5px 0;">🎯 OKR Durum — Hafta 15 <span style="color:var(--gold);margin-left:4px;">↓</span></div>
+  `;
 }
 
 function reSetTemplate(id) {
@@ -2368,7 +2271,7 @@ function renderREMain() {
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;">
           <button onclick="reStep=3;renderREMain();" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">← Geri</button>
-          <button onclick="reGonderVeArsivle()" style="${S.btn}background:var(--gn);color:#fff;font-weight:800;">✅ Gönder & Arşivle</button>
+          <button onclick="N('✅ Rapor başarıyla gönderildi!');reStep=1;renderREMain();renderREHistory();" style="${S.btn}background:var(--gn);color:#fff;font-weight:800;">✅ Gönder & Arşivle</button>
         </div>
       </div>`;
   }
@@ -2416,7 +2319,7 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     const data = await resp.json();
@@ -2427,39 +2330,8 @@ Her bölümü başlıkla yaz. Somut sayılar ve aksiyon önerileri içer. Max 40
 
   clearInterval(interval);
   if(statusDiv) statusDiv.style.display='none';
-  if(outputEl){outputEl.style.display='block';outputEl.innerHTML=mdToHtml(reOutput);}
+  if(outputEl){outputEl.style.display='block';outputEl.textContent=reOutput;}
   if(btnsEl){btnsEl.style.display='flex';}
-}
-
-async function reGonderVeArsivle() {
-  const tmpl = RE_TEMPLATES.find(t=>t.id===selectedTemplate);
-  if(!reOutput){N('Önce raporu üretin');return;}
-
-  // AKTIF_ISLETME yoksa tekrar yükle
-  if(!AKTIF_ISLETME) await isletmeYukle();
-
-  // Supabase'e kaydet (işletme varsa)
-  if(AKTIF_ISLETME) {
-    const kayit = await dbInsert('rapor_arsiv', {
-      isletme_id:       AKTIF_ISLETME.id,
-      sablon_id:        selectedTemplate,
-      sablon_adi:       tmpl?.name || selectedTemplate,
-      icerik:           reOutput,
-      alici:            tmpl?.alici || '-',
-      olusturma_tarihi: new Date().toISOString(),
-    });
-    if(kayit) {
-      N('✅ Rapor Supabase\'e arşivlendi!');
-      await yuklereRaporlar();  // Sol panel güncelle
-    } else {
-      N('⚠ Supabase kaydı başarısız — rapor yine de yerel saklandı');
-    }
-  } else {
-    N('✅ Rapor arşivlendi (Supabase bağlantısı yok — yerel)');
-  }
-
-  reStep = 1;
-  renderREMain();
 }
 
 // ═══ M10 QUALITY OS ═══
@@ -2476,17 +2348,14 @@ let qosDenetimler = [];
 let qosBulgular = [];
 let qosCapalar = [];
 
-async function initQualityOS() {
-  qosAktifSayfa = 'dashboard';
+function initQualityOS() {
   renderQOSMenu();
   renderQOSSayfa(qosAktifSayfa);
-  const el = document.getElementById('qos-isletme-adi');
+  // Supabase'den veri yükle
   if(AKTIF_ISLETME) {
+    const el = document.getElementById('qos-isletme-adi');
     if(el) el.textContent = AKTIF_ISLETME.isletme_adi;
-    await yukleDenetimler();
-    renderQOSSayfa(qosAktifSayfa);
-  } else {
-    if(el) el.textContent = 'Eliz Resort & Spa';
+    yukleDenetimler();
   }
 }
 
@@ -2503,7 +2372,7 @@ async function yukleDenetimler() {
       qosCapalar = capalar||[];
     }
   }
-  renderQOSSayfa(qosAktifSayfa);
+  if(qosAktifSayfa === 'dashboard') renderQOSSayfa('dashboard');
 }
 
 function renderQOSMenu() {
@@ -2607,76 +2476,30 @@ function renderQOSSayfa(sayfa) {
   }
 
   else if(sayfa === 'denetim') {
-    const renderZincir = () => {
-      const kartlar = qosDenetimler.map(d => {
-        const dBulgular = qosBulgular.filter(b=>b.denetim_id===d.id);
-        const bulguHtml = dBulgular.length === 0
-          ? `<div style="padding:10px 14px 10px 28px;font-size:10px;color:var(--mt);border-top:1px solid var(--bd);">Henüz bulgu eklenmedi</div>`
-          : dBulgular.map(b => {
-              const bCapalar = qosCapalar.filter(c=>c.bulgu_id===b.id);
-              const capaHtml = bCapalar.map(c=>`
-                <div id="qos-capa-card-${c.id}" style="margin-top:6px;margin-left:16px;padding:8px 10px;background:var(--bg3);border:1px solid rgba(124,106,247,.2);border-radius:7px;">
-                  <div style="display:flex;align-items:flex-start;gap:8px;">
-                    <span style="font-size:10px;color:var(--ac2);margin-top:1px;">🔧</span>
-                    <div style="flex:1;">
-                      <div style="font-size:11px;font-weight:600;">${c.aksiyon}</div>
-                      <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'} · ${c.tip||'-'}</div>
-                    </div>
-                    <span style="font-size:9px;padding:2px 6px;border-radius:20px;background:${c.durum==='tamamlandi'?'rgba(62,207,142,.15)':c.durum==='devam'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${c.durum==='tamamlandi'?'var(--gn)':c.durum==='devam'?'var(--gold)':'var(--rd)'};">${c.durum}</span>
-                    <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">Dz</button>
-                  </div>
-                  <div id="qos-capa-edit-${c.id}"></div>
-                </div>`).join('');
-              return `
-              <div id="qos-bulgu-${b.id}" style="border-top:1px solid var(--bd);padding:10px 14px 10px 28px;background:var(--bg2);">
-                <div style="display:flex;align-items:flex-start;gap:8px;">
-                  <span style="font-size:9px;padding:2px 6px;border-radius:20px;margin-top:2px;flex-shrink:0;background:${b.oncelik==='kritik'?'rgba(242,107,107,.2)':b.oncelik==='yuksek'?'rgba(240,192,96,.2)':'rgba(62,207,142,.2)'};color:${b.oncelik==='kritik'?'var(--rd)':b.oncelik==='yuksek'?'var(--gold)':'var(--gn)'};">${b.oncelik}</span>
-                  <div style="flex:1;">
-                    <div style="font-size:11px;font-weight:600;">${b.baslik}</div>
-                    <div style="font-size:10px;color:var(--mt2);">${b.iso_madde?b.iso_madde+' · ':''}${b.kategori||''} ${b.departman?'· '+b.departman:''}</div>
-                    ${b.aciklama?`<div style="font-size:10px;color:var(--mt);font-style:italic;">${b.aciklama}</div>`:''}
-                  </div>
-                  <span style="font-size:9px;padding:2px 6px;border-radius:20px;background:${b.durum==='kapali'?'rgba(62,207,142,.15)':'rgba(242,107,107,.1)'};color:${b.durum==='kapali'?'var(--gn)':'var(--mt2)'};">${b.durum||'acik'}</span>
-                  <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:2px 6px;">Dz</button>
-                  <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:2px 6px;">+ CAPA</button>
-                </div>
-                <div id="qos-bulgu-edit-${b.id}"></div>
-                ${capaHtml}
-                <div id="qos-capa-form-${b.id}"></div>
-              </div>`;
-            }).join('');
-
-        return `
-        <div style="border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;overflow:hidden;">
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg3);">
-            <div style="flex:1;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
-                <span style="font-size:12px;font-weight:700;">${d.tip}</span>
-                <span style="font-size:10px;color:var(--mt2);">${d.tarih} · ${d.denetci||'-'}</span>
-                <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${d.sonuc_durumu==='uygun'?'rgba(62,207,142,.15)':d.sonuc_durumu==='kismi_uygun'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${d.sonuc_durumu==='uygun'?'var(--gn)':d.sonuc_durumu==='kismi_uygun'?'var(--gold)':'var(--rd)'};">${d.sonuc_durumu||'-'}</span>
-              </div>
-              <div style="font-size:10px;color:var(--mt);">${dBulgular.length} bulgu · ${bCapalar_count(d.id)} CAPA</div>
-            </div>
-            <div style="font-size:22px;font-weight:800;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</div>
-            <button onclick="qosDenetimDuzenle('${d.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;">Düzenle</button>
-            <button onclick="qosBulguFormuAc('${d.id}','${d.tip}')" style="${S.btn}background:rgba(242,107,107,.12);border:1px solid rgba(242,107,107,.3);color:var(--rd);font-size:10px;padding:3px 8px;">+ Bulgu</button>
-          </div>
-          <div id="qos-denetim-edit-${d.id}"></div>
-          ${bulguHtml}
-          <div id="qos-bulgu-form-${d.id}"></div>
-        </div>`;
-      }).join('');
-      return kartlar;
-    };
-
     el.innerHTML = `
       <div style="${S.card}">
-        <div style="${S.cardTitle}">🔍 Denetim — Bulgu — CAPA Zinciri
+        <div style="${S.cardTitle}">🔍 Denetim Yönetimi
           <button onclick="qosYeniDenetimFormu()" style="margin-left:auto;${S.btn}background:var(--ac);color:#fff;font-size:10px;padding:4px 10px;">+ Yeni Denetim</button>
         </div>
-        ${qosDenetimler.length === 0
-          ? `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz denetim yok</div>`
-          : renderZincir()
+        ${qosDenetimler.length === 0 ?
+          `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz denetim yok — ilk denetimi ekleyin</div>` :
+          `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <tr style="border-bottom:1px solid var(--bd);">
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tip</th>
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tarih</th>
+              <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Denetçi</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Skor</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Durum</th>
+            </tr>
+            ${qosDenetimler.map(d=>`
+              <tr style="border-bottom:1px solid var(--bd);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+                <td style="padding:8px;font-weight:600;">${d.tip}</td>
+                <td style="padding:8px;color:var(--mt2);">${d.tarih}</td>
+                <td style="padding:8px;color:var(--mt2);">${d.denetci||'-'}</td>
+                <td style="padding:8px;text-align:center;font-weight:700;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</td>
+                <td style="padding:8px;text-align:center;"><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(62,207,142,.15);color:var(--gn);">${d.sonuc_durumu||'-'}</span></td>
+              </tr>`).join('')}
+          </table>`
         }
       </div>
       <div id="qos-denetim-form"></div>`;
@@ -2689,19 +2512,15 @@ function renderQOSSayfa(sayfa) {
         ${qosBulgular.length === 0 ?
           `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz bulgu yok</div>` :
           qosBulgular.map(b=>`
-            <div id="qos-bulgu-${b.id}" style="background:var(--bg3);border:1px solid ${b.durum==='kapali'?'var(--bd)':'var(--bd)'};border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
               <div style="display:flex;align-items:flex-start;gap:10px;">
                 <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${b.oncelik==='kritik'?'rgba(242,107,107,.2)':b.oncelik==='yuksek'?'rgba(240,192,96,.2)':'rgba(62,207,142,.2)'};color:${b.oncelik==='kritik'?'var(--rd)':b.oncelik==='yuksek'?'var(--gold)':'var(--gn)'};flex-shrink:0;">${b.oncelik}</span>
-                <div style="flex:1;cursor:pointer;" onclick="qosBulguDuzenle('${b.id}')">
+                <div style="flex:1;">
                   <div style="font-size:12px;font-weight:600;margin-bottom:2px;">${b.baslik}</div>
-                  <div style="font-size:10px;color:var(--mt2);">${b.iso_madde?b.iso_madde+' · ':''}${b.kategori||''} ${b.departman?'· '+b.departman:''}</div>
-                  ${b.aciklama?`<div style="font-size:10px;color:var(--mt);margin-top:4px;font-style:italic;">${b.aciklama}</div>`:''}
+                  <div style="font-size:10px;color:var(--mt2);">${b.iso_madde||''} · ${b.kategori||''}</div>
                 </div>
-                <span style="font-size:9px;padding:2px 8px;border-radius:20px;background:${b.durum==='kapali'?'rgba(62,207,142,.15)':'rgba(242,107,107,.12)'};color:${b.durum==='kapali'?'var(--gn)':'var(--rd)'};margin-right:4px;">${b.durum||'acik'}</span>
-                <button onclick="qosBulguDuzenle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">Düzenle</button>
                 <button onclick="qosCapaEkle('${b.id}')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);font-size:10px;padding:4px 10px;">+ CAPA</button>
               </div>
-              <div id="qos-bulgu-edit-${b.id}"></div>
             </div>`).join('')
         }
       </div>`;
@@ -2714,40 +2533,48 @@ function renderQOSSayfa(sayfa) {
         ${qosCapalar.length === 0 ?
           `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz CAPA kaydı yok</div>` :
           qosCapalar.map(c=>`
-            <div id="qos-capa-card-${c.id}" style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-                <div style="flex:1;cursor:pointer;" onclick="qosCapaDuzenle('${c.id}')">
+                <div style="flex:1;">
                   <div style="font-size:12px;font-weight:600;margin-bottom:3px;">${c.aksiyon}</div>
-                  <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'} · Tip: ${c.tip||'-'}</div>
+                  <div style="font-size:10px;color:var(--mt2);">Sorumlu: ${c.sorumlu_ad||'-'} · Hedef: ${c.hedef_tarih||'-'}</div>
                 </div>
-                <button onclick="qosCapaDuzenle('${c.id}')" style="${S.btn}background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);color:var(--ac2);font-size:10px;padding:3px 8px;margin-right:4px;">Düzenle</button>
                 <span style="font-size:9px;padding:2px 8px;border-radius:20px;flex-shrink:0;background:${c.durum==='tamamlandi'?'rgba(62,207,142,.15)':c.durum==='devam'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${c.durum==='tamamlandi'?'var(--gn)':c.durum==='devam'?'var(--gold)':'var(--rd)'};">${c.durum}</span>
               </div>
-              <div id="qos-capa-edit-${c.id}"></div>
             </div>`).join('')
         }
       </div>`;
   }
 
   else if(sayfa === 'iso') {
-    const isoMaddeler = [
-      {madde:'Md.4.1',baslik:'Kuruluşun bağlamı',durum:'uygun'},
-      {madde:'Md.6.1',baslik:'Risk ve fırsat yönetimi',durum:'kismi'},
-      {madde:'Md.7.1',baslik:'Kaynaklar',durum:'uygun'},
-      {madde:'Md.8.1',baslik:'Operasyonel planlama',durum:'kismi'},
-      {madde:'Md.9.1',baslik:'İzleme ve ölçüm',durum:'eksik'},
-      {madde:'Md.10.2',baslik:'Uygunsuzluk ve düzeltici faaliyet',durum:'uygun'},
-    ];
     el.innerHTML = `
       <div style="${S.card}">
         <div style="${S.cardTitle}">📋 ISO 9001:2015 Uyum Matrisi</div>
-        ${isoMaddeler.map(m=>`
-          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);">
-            <span style="font-size:10px;font-family:'Fira Code',monospace;color:var(--ac2);min-width:60px;">${m.madde}</span>
-            <span style="flex:1;font-size:12px;">${m.baslik}</span>
-            <span style="font-size:9px;padding:2px 10px;border-radius:20px;background:${m.durum==='uygun'?'rgba(62,207,142,.15)':m.durum==='kismi'?'rgba(240,192,96,.15)':'rgba(242,107,107,.15)'};color:${m.durum==='uygun'?'var(--gn)':m.durum==='kismi'?'var(--gold)':'var(--rd)'};">${m.durum}</span>
-          </div>`).join('')}
+        <div id="iso-yukleniyor" style="padding:24px;text-align:center;color:var(--mt);font-size:12px;">⏳ Supabase'den yükleniyor...</div>
+        <div id="iso-icerik"></div>
+      </div>
+      <div style="${S.card};margin-top:12px;" id="iso-yeni-form" style="display:none;">
+        <div style="${S.cardTitle}">+ Yeni ISO Maddesi Ekle</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label style="${S.lbl}">Madde No</label><input id="iso-f-madde" style="${S.inp}" placeholder="Md.6.1"></div>
+          <div><label style="${S.lbl}">Başlık</label><input id="iso-f-baslik" style="${S.inp}" placeholder="Risk ve fırsat yönetimi"></div>
+          <div><label style="${S.lbl}">Durum</label>
+            <select id="iso-f-durum" style="${S.inp}padding:7px 10px;">
+              <option value="uygun">✅ Uygun</option>
+              <option value="kismi">⚠️ Kısmi</option>
+              <option value="eksik">❌ Eksik</option>
+            </select>
+          </div>
+          <div><label style="${S.lbl}">Not (opsiyonel)</label><input id="iso-f-not" style="${S.inp}" placeholder="Açıklama..."></div>
+        </div>
+        <button onclick="isoKaydet()" style="${S.btn}">Kaydet</button>
+        <button onclick="document.getElementById('iso-yeni-form').style.display='none'" style="${S.btnSecondary||S.btn}margin-left:8px;background:var(--bg3);color:var(--mt);">İptal</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button onclick="document.getElementById('iso-yeni-form').style.display='block'" style="${S.btn}">+ Madde Ekle</button>
       </div>`;
+    // Canlı veri yükle
+    isoYukle();
   }
 
   else if(sayfa === 'trend') {
@@ -2761,6 +2588,142 @@ function renderQOSSayfa(sayfa) {
       </div>`;
   }
 }
+
+// ═══ BL-003: ISO UYUM MATRİSİ — CANLI VERİ ═══
+async function isoYukle() {
+  const icerik = document.getElementById('iso-icerik');
+  const yukleniyor = document.getElementById('iso-yukleniyor');
+  if(!icerik) return;
+
+  // Önce Supabase'den çek
+  let maddeler = await dbGet('iso_uyum', {isletme_id: AKTIF_ISLETME?.id});
+
+  // Tablo boşsa varsayılan seed veri göster (fallback)
+  if(!maddeler || maddeler.length === 0) {
+    const seed = [
+      {madde:'Md.4.1',baslik:'Kuruluşun bağlamı',durum:'uygun',not:''},
+      {madde:'Md.6.1',baslik:'Risk ve fırsat yönetimi',durum:'kismi',not:'Risk kaydı eksik'},
+      {madde:'Md.7.1',baslik:'Kaynaklar',durum:'uygun',not:''},
+      {madde:'Md.7.2',baslik:'Yeterlilik yönetimi',durum:'kismi',not:'Eğitim kayıtları güncellenmeli'},
+      {madde:'Md.8.1',baslik:'Operasyonel planlama',durum:'kismi',not:'SOP dokümantasyonu eksik'},
+      {madde:'Md.8.5',baslik:'Üretim ve hizmet sunumu',durum:'uygun',not:''},
+      {madde:'Md.9.1',baslik:'İzleme ve ölçüm',durum:'eksik',not:'KPI sistemi kurulmamış'},
+      {madde:'Md.9.3',baslik:'Yönetim gözden geçirme',durum:'eksik',not:'MGG toplantısı yapılmamış'},
+      {madde:'Md.10.2',baslik:'Uygunsuzluk ve düzeltici faaliyet',durum:'uygun',not:'CAPA prosedürü aktif'},
+      {madde:'Md.10.3',baslik:'Sürekli iyileştirme',durum:'kismi',not:'Hedef belirleme sürecinde'},
+    ];
+    if(yukleniyor) yukleniyor.style.display='none';
+    icerik.innerHTML = isoRenderSatirlar(seed, true);
+    icerik.innerHTML += `<div style="padding:8px 0;font-size:10px;color:var(--gold);">⚠️ Supabase'de kayıt bulunamadı — varsayılan veriler gösteriliyor. "Kaydet" ile Supabase'e aktarın.</div>`;
+    return;
+  }
+
+  if(yukleniyor) yukleniyor.style.display='none';
+  icerik.innerHTML = isoRenderSatirlar(maddeler, false);
+  isoIstatistik(maddeler);
+}
+
+function isoRenderSatirlar(maddeler, seedMode) {
+  const uygun = maddeler.filter(m=>m.durum==='uygun').length;
+  const kismi  = maddeler.filter(m=>m.durum==='kismi').length;
+  const eksik  = maddeler.filter(m=>m.durum==='eksik').length;
+  const toplam = maddeler.length;
+  const uyumPct = toplam ? Math.round((uygun / toplam)*100) : 0;
+  const durumRenk = d => d==='uygun'?'var(--gn)':d==='kismi'?'var(--gold)':'var(--rd)';
+  const durumBg   = d => d==='uygun'?'rgba(62,207,142,.12)':d==='kismi'?'rgba(240,192,96,.12)':'rgba(242,107,107,.12)';
+  const durumEtiket = d => d==='uygun'?'✅ Uygun':d==='kismi'?'⚠️ Kısmi':'❌ Eksik';
+
+  return `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+      <div style="background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--gn);">${uygun}</div>
+        <div style="font-size:9px;color:var(--mt);">Uygun</div>
+      </div>
+      <div style="background:rgba(240,192,96,.08);border:1px solid rgba(240,192,96,.2);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--gold);">${kismi}</div>
+        <div style="font-size:9px;color:var(--mt);">Kısmi</div>
+      </div>
+      <div style="background:rgba(242,107,107,.08);border:1px solid rgba(242,107,107,.2);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--rd);">${eksik}</div>
+        <div style="font-size:9px;color:var(--mt);">Eksik</div>
+      </div>
+      <div style="background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.2);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--ac);">${uyumPct}%</div>
+        <div style="font-size:9px;color:var(--mt);">Uyum Oranı</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="isoFiltrele('hepsi')" id="iso-fil-hepsi" style="font-size:10px;padding:4px 12px;border-radius:20px;border:1px solid var(--ac);background:var(--ac);color:#fff;cursor:pointer;">Tümü (${toplam})</button>
+      <button onclick="isoFiltrele('eksik')" id="iso-fil-eksik" style="font-size:10px;padding:4px 12px;border-radius:20px;border:1px solid var(--rd);background:transparent;color:var(--rd);cursor:pointer;">Eksik (${eksik})</button>
+      <button onclick="isoFiltrele('kismi')" id="iso-fil-kismi" style="font-size:10px;padding:4px 12px;border-radius:20px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;">Kısmi (${kismi})</button>
+    </div>
+    <div id="iso-satirlar">
+    ${maddeler.map((m,i)=>`
+      <div class="iso-satir" data-durum="${m.durum}" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);transition:opacity .2s;">
+        <span style="font-size:10px;font-family:'Fira Code',monospace;color:var(--ac2);min-width:65px;">${m.madde||''}</span>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--t1);">${m.baslik||''}</div>
+          ${m.not?`<div style="font-size:9.5px;color:var(--mt);margin-top:2px;">${m.not}</div>`:''}
+        </div>
+        <select onchange="isoDurumGuncelle(${seedMode?`null`:`'${m.id}'`}, this.value, ${i})"
+          style="font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid ${durumRenk(m.durum)};background:${durumBg(m.durum)};color:${durumRenk(m.durum)};cursor:pointer;outline:none;">
+          <option value="uygun" ${m.durum==='uygun'?'selected':''}>✅ Uygun</option>
+          <option value="kismi"  ${m.durum==='kismi' ?'selected':''}>⚠️ Kısmi</option>
+          <option value="eksik"  ${m.durum==='eksik' ?'selected':''}>❌ Eksik</option>
+        </select>
+      </div>`).join('')}
+    </div>`;
+}
+
+function isoFiltrele(filtre) {
+  document.querySelectorAll('.iso-satir').forEach(el=>{
+    el.style.display = (filtre==='hepsi'||el.dataset.durum===filtre)?'flex':'none';
+  });
+}
+
+async function isoDurumGuncelle(id, yeniDurum, index) {
+  if(!id) { N('Önce Supabase\'e kaydedin'); return; }
+  const sonuc = await dbUpdate('iso_uyum', id, {durum: yeniDurum, guncelleme_tarihi: new Date().toISOString()});
+  if(sonuc) {
+    N(`✅ Durum güncellendi: ${yeniDurum}`);
+    isoYukle(); // yenile
+  } else {
+    N('❌ Güncelleme başarısız');
+  }
+}
+
+async function isoKaydet() {
+  const madde  = document.getElementById('iso-f-madde')?.value?.trim();
+  const baslik = document.getElementById('iso-f-baslik')?.value?.trim();
+  const durum  = document.getElementById('iso-f-durum')?.value;
+  const not_   = document.getElementById('iso-f-not')?.value?.trim();
+  if(!madde||!baslik) { N('Madde no ve başlık zorunlu'); return; }
+  const yeni = {
+    isletme_id: AKTIF_ISLETME?.id,
+    madde, baslik, durum,
+    not: not_||null,
+    standart: 'ISO 9001:2015',
+    olusturma_tarihi: new Date().toISOString()
+  };
+  const kayit = await dbInsert('iso_uyum', yeni);
+  if(kayit) {
+    N('✅ Madde eklendi');
+    document.getElementById('iso-yeni-form').style.display='none';
+    isoYukle();
+  } else {
+    N('❌ Kayıt başarısız');
+  }
+}
+
+function isoIstatistik(maddeler) {
+  // İleride QX bağlantısı için hook noktası
+  console.log('ISO istatistik:', {
+    toplam: maddeler.length,
+    uygun: maddeler.filter(m=>m.durum==='uygun').length,
+    oran: Math.round(maddeler.filter(m=>m.durum==='uygun').length/maddeler.length*100)+'%'
+  });
+}
+// ═══════════════════════════════════════════════════
 
 function qosYeniDenetimFormu() {
   const el = document.getElementById('qos-denetim-form') || document.getElementById('qos-main');
@@ -2833,313 +2796,39 @@ async function qosDenetimKaydet() {
 }
 
 async function qosCapaEkle(bulguId) {
-  // Bulgu satırının altında form açar
-  const formEl = document.getElementById('qos-capa-form-' + bulguId);
-  if(formEl) { formEl.remove(); return; } // toggle
-
-  const container = document.getElementById('qos-bulgu-' + bulguId);
-  if(!container) return;
-
-  const formHtml = `<div id="qos-capa-form-${bulguId}" style="${S.card}background:var(--bg3);border:1px solid rgba(124,106,247,.3);margin-top:8px;">
-    <div style="${S.cardTitle}">🔧 Düzeltici Faaliyet Ekle</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div style="grid-column:1/-1"><label style="${S.lbl}">Aksiyon</label>
-        <input id="capa-aksiyon-${bulguId}" style="${S.inp}" placeholder="Yapılacak düzeltici faaliyet..."></div>
-      <div><label style="${S.lbl}">Sorumlu</label>
-        <input id="capa-sorumlu-${bulguId}" style="${S.inp}" placeholder="Sorumlu kişi"></div>
-      <div><label style="${S.lbl}">Hedef Tarih</label>
-        <input id="capa-tarih-${bulguId}" type="date" style="${S.inp}" value="${new Date(Date.now()+14*86400000).toISOString().split('T')[0]}"></div>
-      <div><label style="${S.lbl}">Tip</label>
-        <select id="capa-tip-${bulguId}" style="${S.inp}padding:7px 10px;">
-          <option value="duzeltici">Düzeltici</option>
-          <option value="onleyici">Önleyici</option>
-          <option value="iyilestirici">İyileştirici</option>
-        </select></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="qosCapaKaydet('${bulguId}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-      <button onclick="document.getElementById('qos-capa-form-${bulguId}').remove()" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-    </div>
-  </div>`;
-  container.insertAdjacentHTML('afterend', formHtml);
-}
-
-async function qosCapaKaydet(bulguId) {
-  const aksiyon = document.getElementById('capa-aksiyon-'+bulguId)?.value;
-  if(!aksiyon){N('Aksiyon zorunlu');return;}
+  const aksiyon = prompt('CAPA aksiyonu girin:');
+  if(!aksiyon) return;
+  const sorumlu = prompt('Sorumlu kişi:');
   const yeni = {
     bulgu_id:    bulguId,
-    tip:         document.getElementById('capa-tip-'+bulguId)?.value || 'duzeltici',
+    tip:         'duzeltici',
     aksiyon:     aksiyon,
-    sorumlu_ad:  document.getElementById('capa-sorumlu-'+bulguId)?.value||null,
-    hedef_tarih: document.getElementById('capa-tarih-'+bulguId)?.value||null,
+    sorumlu_ad:  sorumlu||null,
     durum:       'acik',
   };
-  // CDM uyumu: isletme_id ekle
-  if(AKTIF_ISLETME) yeni.isletme_id = AKTIF_ISLETME.id;
   const kayit = await dbInsert('capa', yeni);
   if(kayit){
-    N('✓ CAPA kaydedildi');
-    document.getElementById('qos-capa-form-'+bulguId)?.remove();
+    N('✓ CAPA Supabase\'e kaydedildi');
     await yukleDenetimler();
-  } else {
-    N('Kayıt hatası');
+    qosGit('capa');
   }
 }
-
-
-// ═══ BULGU DÜZENLEME ═══
-function qosBulguDuzenle(bulguId) {
-  const editEl = document.getElementById('qos-bulgu-edit-'+bulguId);
-  if(!editEl) return;
-  if(editEl.innerHTML) { editEl.innerHTML=''; return; } // toggle
-
-  const b = qosBulgular.find(x=>x.id===bulguId);
-  if(!b) return;
-
-  editEl.innerHTML = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-      <div style="grid-column:1/-1"><label style="${S.lbl}">Başlık</label>
-        <input id="be-baslik-${b.id}" style="${S.inp}" value="${(b.baslik||'').replace(/"/g,'&quot;')}"></div>
-      <div><label style="${S.lbl}">Öncelik</label>
-        <select id="be-oncelik-${b.id}" style="${S.inp}padding:7px 10px;">
-          <option value="kritik" ${b.oncelik==='kritik'?'selected':''}>Kritik</option>
-          <option value="yuksek" ${b.oncelik==='yuksek'?'selected':''}>Yüksek</option>
-          <option value="orta" ${b.oncelik==='orta'?'selected':''}>Orta</option>
-          <option value="dusuk" ${b.oncelik==='dusuk'?'selected':''}>Düşük</option>
-        </select></div>
-      <div><label style="${S.lbl}">Durum</label>
-        <select id="be-durum-${b.id}" style="${S.inp}padding:7px 10px;">
-          <option value="acik" ${b.durum==='acik'?'selected':''}>Açık</option>
-          <option value="incelemede" ${b.durum==='incelemede'?'selected':''}>İncelemede</option>
-          <option value="kapali" ${b.durum==='kapali'?'selected':''}>Kapalı</option>
-        </select></div>
-      <div><label style="${S.lbl}">ISO Maddesi</label>
-        <input id="be-iso-${b.id}" style="${S.inp}" value="${b.iso_madde||''}"></div>
-      <div><label style="${S.lbl}">Departman</label>
-        <input id="be-dept-${b.id}" style="${S.inp}" value="${b.departman||''}"></div>
-    </div>
-    <div style="margin-bottom:8px;"><label style="${S.lbl}">Açıklama</label>
-      <textarea id="be-aciklama-${b.id}" style="${S.ta}">${b.aciklama||''}</textarea></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="qosBulguGuncelle('${b.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Güncelle</button>
-      <button onclick="document.getElementById('qos-bulgu-edit-${b.id}').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-    </div>
-  </div>`;
-}
-
-async function qosBulguGuncelle(bulguId) {
-  const updates = {
-    baslik:    document.getElementById('be-baslik-'+bulguId)?.value,
-    oncelik:   document.getElementById('be-oncelik-'+bulguId)?.value,
-    durum:     document.getElementById('be-durum-'+bulguId)?.value,
-    iso_madde: document.getElementById('be-iso-'+bulguId)?.value||null,
-    departman: document.getElementById('be-dept-'+bulguId)?.value||null,
-    aciklama:  document.getElementById('be-aciklama-'+bulguId)?.value||null,
-  };
-  const kayit = await dbUpdate('bulgu', bulguId, updates);
-  if(kayit){
-    N('✓ Bulgu güncellendi');
-    await yukleDenetimler();
-  } else {
-    N('Güncelleme hatası');
-  }
-}
-
-// ═══ CAPA DÜZENLEME ═══
-function qosCapaDuzenle(capaId) {
-  const editEl = document.getElementById('qos-capa-edit-'+capaId);
-  if(!editEl) return;
-  if(editEl.innerHTML) { editEl.innerHTML=''; return; } // toggle
-
-  const c = qosCapalar.find(x=>x.id===capaId);
-  if(!c) return;
-
-  editEl.innerHTML = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-      <div style="grid-column:1/-1"><label style="${S.lbl}">Aksiyon</label>
-        <input id="ce-aksiyon-${c.id}" style="${S.inp}" value="${(c.aksiyon||'').replace(/"/g,'&quot;')}"></div>
-      <div><label style="${S.lbl}">Sorumlu</label>
-        <input id="ce-sorumlu-${c.id}" style="${S.inp}" value="${c.sorumlu_ad||''}"></div>
-      <div><label style="${S.lbl}">Hedef Tarih</label>
-        <input id="ce-tarih-${c.id}" type="date" style="${S.inp}" value="${c.hedef_tarih||''}"></div>
-      <div><label style="${S.lbl}">Durum</label>
-        <select id="ce-durum-${c.id}" style="${S.inp}padding:7px 10px;">
-          <option value="acik" ${c.durum==='acik'?'selected':''}>Açık</option>
-          <option value="devam" ${c.durum==='devam'?'selected':''}>Devam Ediyor</option>
-          <option value="tamamlandi" ${c.durum==='tamamlandi'?'selected':''}>Tamamlandı</option>
-          <option value="iptal" ${c.durum==='iptal'?'selected':''}>İptal</option>
-        </select></div>
-      <div><label style="${S.lbl}">Tip</label>
-        <select id="ce-tip-${c.id}" style="${S.inp}padding:7px 10px;">
-          <option value="duzeltici" ${c.tip==='duzeltici'?'selected':''}>Düzeltici</option>
-          <option value="onleyici" ${c.tip==='onleyici'?'selected':''}>Önleyici</option>
-          <option value="iyilestirici" ${c.tip==='iyilestirici'?'selected':''}>İyileştirici</option>
-        </select></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="qosCapaGuncelle('${c.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Güncelle</button>
-      <button onclick="document.getElementById('qos-capa-edit-${c.id}').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-    </div>
-  </div>`;
-}
-
-async function qosCapaGuncelle(capaId) {
-  const updates = {
-    aksiyon:    document.getElementById('ce-aksiyon-'+capaId)?.value,
-    sorumlu_ad: document.getElementById('ce-sorumlu-'+capaId)?.value||null,
-    hedef_tarih:document.getElementById('ce-tarih-'+capaId)?.value||null,
-    durum:      document.getElementById('ce-durum-'+capaId)?.value,
-    tip:        document.getElementById('ce-tip-'+capaId)?.value,
-  };
-  const kayit = await dbUpdate('capa', capaId, updates);
-  if(kayit){
-    N('✓ CAPA güncellendi');
-    await yukleDenetimler();
-  } else {
-    N('Güncelleme hatası');
-  }
-}
-
-
-// ═══ ZİNCİR YARDIMCI FONKSİYONLAR ═══
-function bCapalar_count(denetimId) {
-  const ids = qosBulgular.filter(b=>b.denetim_id===denetimId).map(b=>b.id);
-  return qosCapalar.filter(c=>ids.includes(c.bulgu_id)).length;
-}
-
-function qosDenetimDuzenle(denetimId) {
-  const editEl = document.getElementById('qos-denetim-edit-'+denetimId);
-  if(!editEl) return;
-  if(editEl.innerHTML) { editEl.innerHTML=''; return; }
-
-  const d = qosDenetimler.find(x=>x.id===denetimId);
-  if(!d) return;
-
-  editEl.innerHTML = `<div style="padding:12px 14px;border-top:1px solid var(--bd);background:var(--bg2);">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-      <div><label style="${S.lbl}">Denetim Tipi</label>
-        <select id="de-tip-${d.id}" style="${S.inp}padding:7px 10px;">
-          <option value="LQA" ${d.tip==='LQA'?'selected':''}>LQA</option>
-          <option value="ISO" ${d.tip==='ISO'?'selected':''}>ISO</option>
-          <option value="EFQM" ${d.tip==='EFQM'?'selected':''}>EFQM</option>
-          <option value="ic_denetim" ${d.tip==='ic_denetim'?'selected':''}>İç Denetim</option>
-        </select></div>
-      <div><label style="${S.lbl}">Tarih</label>
-        <input id="de-tarih-${d.id}" type="date" style="${S.inp}" value="${d.tarih||''}"></div>
-      <div><label style="${S.lbl}">Denetçi</label>
-        <input id="de-denetci-${d.id}" style="${S.inp}" value="${d.denetci||''}"></div>
-      <div><label style="${S.lbl}">Toplam Skor</label>
-        <input id="de-skor-${d.id}" type="number" min="0" max="100" style="${S.inp}" value="${d.toplam_skor||''}"></div>
-      <div><label style="${S.lbl}">Sonuç Durumu</label>
-        <select id="de-sonuc-${d.id}" style="${S.inp}padding:7px 10px;">
-          <option value="uygun" ${d.sonuc_durumu==='uygun'?'selected':''}>Uygun</option>
-          <option value="kismi_uygun" ${d.sonuc_durumu==='kismi_uygun'?'selected':''}>Kısmi Uygun</option>
-          <option value="uygun_degil" ${d.sonuc_durumu==='uygun_degil'?'selected':''}>Uygun Değil</option>
-          <option value="kritik" ${d.sonuc_durumu==='kritik'?'selected':''}>Kritik</option>
-        </select></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="qosDenetimGuncelle('${d.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Güncelle</button>
-      <button onclick="document.getElementById('qos-denetim-edit-${d.id}').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-    </div>
-  </div>`;
-}
-
-async function qosDenetimGuncelle(denetimId) {
-  const updates = {
-    tip:          document.getElementById('de-tip-'+denetimId)?.value,
-    tarih:        document.getElementById('de-tarih-'+denetimId)?.value,
-    denetci:      document.getElementById('de-denetci-'+denetimId)?.value||null,
-    toplam_skor:  parseFloat(document.getElementById('de-skor-'+denetimId)?.value)||null,
-    sonuc_durumu: document.getElementById('de-sonuc-'+denetimId)?.value,
-  };
-  const kayit = await dbUpdate('denetim', denetimId, updates);
-  if(kayit){
-    N('✓ Denetim güncellendi');
-    await yukleDenetimler();
-  } else {
-    N('Güncelleme hatası');
-  }
-}
-
-// Bulgu formu açıcı (denetim satırından çağrılır)
-function qosBulguFormuAc(denetimId, denetimTip) {
-  const formEl = document.getElementById('qos-bulgu-form-'+denetimId) || document.getElementById('qos-bulgu-form');
-  if(!formEl) return;
-
-  formEl.innerHTML = `<div style="${S.card}border:1px solid rgba(242,107,107,.3);">
-    <div style="${S.cardTitle}">⚠ Bulgu Ekle — ${denetimTip} Denetimi</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div style="grid-column:1/-1"><label style="${S.lbl}">Bulgu Başlığı</label>
-        <input id="bulgu-baslik" style="${S.inp}" placeholder="Tespit edilen bulgunun kısa açıklaması..."></div>
-      <div><label style="${S.lbl}">Öncelik</label>
-        <select id="bulgu-oncelik" style="${S.inp}padding:7px 10px;">
-          <option value="kritik">Kritik</option>
-          <option value="yuksek">Yüksek</option>
-          <option value="orta">Orta</option>
-          <option value="dusuk">Düşük</option>
-        </select></div>
-      <div><label style="${S.lbl}">Kategori</label>
-        <select id="bulgu-kategori" style="${S.inp}padding:7px 10px;">
-          <option value="temizlik">Temizlik & Hijyen</option>
-          <option value="servis">Servis Kalitesi</option>
-          <option value="teknik">Teknik & Bakım</option>
-          <option value="personel">Personel & Eğitim</option>
-          <option value="prosedur">Prosedür Uyumu</option>
-          <option value="diger">Diğer</option>
-        </select></div>
-      <div><label style="${S.lbl}">ISO Maddesi (opsiyonel)</label>
-        <input id="bulgu-iso" style="${S.inp}" placeholder="Md.9.1"></div>
-      <div><label style="${S.lbl}">Departman</label>
-        <input id="bulgu-dept" style="${S.inp}" placeholder="Housekeeping, F&B..."></div>
-    </div>
-    <div style="margin-bottom:12px;"><label style="${S.lbl}">Açıklama</label>
-      <textarea id="bulgu-aciklama" style="${S.ta}" placeholder="Bulgunun detaylı açıklaması..."></textarea></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="qosBulguKaydet('${denetimId}')" style="${S.btn}background:var(--rd);color:#fff;">💾 Bulgu Kaydet</button>
-      <button onclick="(document.getElementById('qos-bulgu-form-${denetimId}')||document.getElementById('qos-bulgu-form')).innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
-    </div>
-  </div>`;
-  formEl.scrollIntoView({behavior:'smooth'});
-}
-
-async function qosBulguKaydet(denetimId) {
-  const baslik = document.getElementById('bulgu-baslik')?.value;
-  if(!baslik){N('Bulgu başlığı zorunlu');return;}
-  const yeni = {
-    denetim_id:  denetimId,
-    baslik:      baslik,
-    oncelik:     document.getElementById('bulgu-oncelik')?.value || 'orta',
-    kategori:    document.getElementById('bulgu-kategori')?.value || 'diger',
-    iso_madde:   document.getElementById('bulgu-iso')?.value||null,
-    departman:   document.getElementById('bulgu-dept')?.value||null,
-    aciklama:    document.getElementById('bulgu-aciklama')?.value||null,
-    durum:       'acik',
-  };
-  // CDM uyumu: isletme_id ekle
-  if(AKTIF_ISLETME) yeni.isletme_id = AKTIF_ISLETME.id;
-  const kayit = await dbInsert('bulgu', yeni);
-  if(kayit){
-    N('✓ Bulgu kaydedildi');
-    (document.getElementById('qos-bulgu-form-'+denetimId)||document.getElementById('qos-bulgu-form')).innerHTML='';
-    await yukleDenetimler();
-  } else {
-    N('Kayıt hatası');
-  }
-}
-async function baslat() {
   init();
+  // Supabase'den canlı veri yükle
   await isletmeYukle();
   if(AKTIF_ISLETME) {
+    // Topbar'da işletme adını göster
     const brand = document.querySelector('.tb-tagline');
     if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
+    // OKR ve QX verilerini güncelle
     if(AKTIF_QX) {
+      // QX_LAYERS'ı canlı veriyle güncelle
       QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
       QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
       QX_LAYERS[2].skor = AKTIF_QX.ox_skor || QX_LAYERS[2].skor;
       QX_LAYERS[3].skor = AKTIF_QX.bx_skor || QX_LAYERS[3].skor;
     }
+    // OKR verilerini canlı yükle
     if(AKTIF_OKRLER.length > 0) {
       for(let i=0;i<Math.min(AKTIF_OKRLER.length, OKR_DATA.length);i++) {
         OKR_DATA[i].objective = AKTIF_OKRLER[i].objective || OKR_DATA[i].objective;
@@ -3150,7 +2839,782 @@ async function baslat() {
     N('✓ ' + AKTIF_ISLETME.isletme_adi + ' — Supabase bağlantısı aktif');
   }
 }
-baslat();
+// ═══════════════════════════════════════════════════════
+// M11 — İŞ PLANI TAKİP SİSTEMİ
+// ═══════════════════════════════════════════════════════
+
+const IP_DEPARTMANLAR = [
+  'Bahçe & Çevre','Bilgi İşlem','Aquapark & Aktivite','Animasyon & Eğlence',
+  'F&B Hizmetleri','Güvenlik','Kalite & Sürdürülebilirlik','Kat Hizmetleri',
+  'Misafir Deneyimi','Muhasebe & Finans','Mutfak & Steward','SPA & Wellness',
+  'Satınalma','Satış & Pazarlama','Teknik Servis','Ön Büro',
+  'İnsan Kaynakları','İK Eğitim & Gelişim','İK Personel Yönetimi','Genel Müdürlük'
+];
+
+const IP_MENU = [
+  {id:'ip-dashboard', label:'Dashboard', icon:'◉'},
+  {id:'ip-liste',     label:'Faaliyet Listesi', icon:'☰'},
+  {id:'ip-takvim',    label:'Takvim Görünümü', icon:'◫'},
+  {id:'ip-departman', label:'Departman Bazlı', icon:'◈'},
+  {id:'ip-rapor',     label:'Tamamlanma Raporu', icon:'◎'},
+];
+
+let ipAktifSayfa = 'ip-dashboard';
+let ipFaaliyetler = [];
+
+async function initIsPlani() {
+  renderIPMenu();
+  await ipDoldurmaDept();
+  await ipYukle();
+}
+
+function renderIPMenu() {
+  const el = document.getElementById('ip-menu');
+  if(!el) return;
+  el.innerHTML = IP_MENU.map(m => `
+    <div onclick="ipGit('${m.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;
+      background:${ipAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'};
+      border:1px solid ${ipAktifSayfa===m.id?'var(--ac)':'transparent'};">
+      <span style="font-size:11px;color:var(--ac2);">${m.icon}</span>
+      <span style="font-size:11px;font-weight:${ipAktifSayfa===m.id?700:500};color:${ipAktifSayfa===m.id?'var(--ac2)':'var(--mt2)'};">${m.label}</span>
+    </div>`).join('');
+}
+
+async function ipDoldurmaDept() {
+  const sel = document.getElementById('ip-dept-filtre');
+  if(!sel) return;
+  IP_DEPARTMANLAR.forEach(d => {
+    const o = document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
+  });
+}
+
+function ipGit(sayfa) {
+  ipAktifSayfa = sayfa;
+  renderIPMenu();
+  ipRenderSayfa(sayfa);
+}
+
+async function ipYukle() {
+  const el = document.getElementById('ip-main');
+  if(!el) return;
+  el.innerHTML = `<div style="padding:32px;text-align:center;color:var(--mt);font-size:12px;">⏳ Yükleniyor...</div>`;
+  try {
+    ipFaaliyetler = await dbGet('is_plani', {isletme_id: AKTIF_ISLETME?.id});
+  } catch(e) { ipFaaliyetler = []; }
+  ipRenderSayfa(ipAktifSayfa);
+}
+
+function ipRenderSayfa(sayfa) {
+  const el = document.getElementById('ip-main');
+  if(!el) return;
+
+  if(sayfa === 'ip-dashboard') {
+    const toplam = ipFaaliyetler.length;
+    const tamamlanan = ipFaaliyetler.filter(f=>f.durum==='tamamlandi').length;
+    const devam = ipFaaliyetler.filter(f=>f.durum==='devam').length;
+    const bekleyen = ipFaaliyetler.filter(f=>f.durum==='baslayacak'||f.durum==='beklemede').length;
+    const geciken = ipFaaliyetler.filter(f=>{
+      if(f.durum==='tamamlandi'||f.durum==='iptal') return false;
+      return f.bitis_tarihi && new Date(f.bitis_tarihi) < new Date();
+    }).length;
+    const tamamPct = toplam ? Math.round(tamamlanan/toplam*100) : 0;
+
+    // Departman dağılımı
+    const deptSayim = {};
+    ipFaaliyetler.forEach(f => {
+      if(f.departman) deptSayim[f.departman] = (deptSayim[f.departman]||0)+1;
+    });
+    const deptSirali = Object.entries(deptSayim).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">📊 İş Planı Genel Durum</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+          ${[
+            {lbl:'Toplam Faaliyet',val:toplam||'—',c:'var(--ac)'},
+            {lbl:'Tamamlanan',val:tamamlanan||'—',c:'var(--gn)'},
+            {lbl:'Devam Eden',val:devam||'—',c:'var(--gold)'},
+            {lbl:'Geciken',val:geciken||'—',c:'var(--rd)'},
+          ].map(m=>`
+            <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--bd);">
+              <div style="font-size:22px;font-weight:800;color:${m.c};">${m.val}</div>
+              <div style="font-size:9px;color:var(--mt);margin-top:3px;">${m.lbl}</div>
+            </div>`).join('')}
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--mt2);">Genel Tamamlanma</span>
+            <span style="font-size:11px;font-weight:700;color:var(--gn);">${tamamPct}%</span>
+          </div>
+          <div style="background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="width:${tamamPct}%;height:100%;background:var(--gn);border-radius:4px;transition:width .4s;"></div>
+          </div>
+        </div>
+        ${toplam===0?`
+          <div style="padding:24px;text-align:center;color:var(--mt);font-size:12px;">
+            <div style="font-size:14px;margin-bottom:8px;">Henüz faaliyet yok</div>
+            <div style="font-size:11px;margin-bottom:16px;">Dashboard'dan form ile girin veya Excel import edin</div>
+            <button onclick="ipYeniFaaliyet()" style="${S.btn}background:var(--ac);color:#fff;">+ Faaliyet Ekle</button>
+            <button onclick="ipExcelImport()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">↑ Excel İmport</button>
+          </div>`:
+          `<div style="${S.cardTitle}font-size:11px;margin-top:8px;">Departman Dağılımı</div>
+          ${deptSirali.map(([dept,say])=>`
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span style="font-size:10px;color:var(--mt2);min-width:160px;">${dept}</span>
+              <div style="flex:1;background:var(--bg3);border-radius:4px;height:6px;">
+                <div style="width:${Math.round(say/toplam*100)}%;height:100%;background:var(--ac);border-radius:4px;"></div>
+              </div>
+              <span style="font-size:10px;color:var(--mt);min-width:24px;text-align:right;">${say}</span>
+            </div>`).join('')}`}
+      </div>
+
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">⚡ Son Aktiviteler</div>
+        ${ipFaaliyetler.slice(-5).reverse().map(f=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);">
+            <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${
+              f.durum==='tamamlandi'?'var(--gn)':f.durum==='devam'?'var(--gold)':f.durum==='iptal'?'var(--rd)':'var(--mt)'
+            };"></div>
+            <div style="flex:1;">
+              <div style="font-size:11px;color:var(--tx);">${f.faaliyet_adi||''}</div>
+              <div style="font-size:9.5px;color:var(--mt);">${f.departman||''} · ${f.bitis_tarihi||''}</div>
+            </div>
+            <span style="font-size:9px;padding:2px 8px;border-radius:12px;background:${
+              f.durum==='tamamlandi'?'rgba(62,207,142,.12)':f.durum==='devam'?'rgba(240,192,96,.12)':'rgba(255,255,255,.05)'
+            };color:${f.durum==='tamamlandi'?'var(--gn)':f.durum==='devam'?'var(--gold)':'var(--mt)'};">${f.durum||''}</span>
+          </div>`).join('') || '<div style="color:var(--mt);font-size:11px;padding:8px 0;">Henüz kayıt yok</div>'}
+      </div>`;
+  }
+
+  else if(sayfa === 'ip-liste') {
+    const dept = document.getElementById('ip-dept-filtre')?.value || '';
+    const durum = document.getElementById('ip-durum-filtre')?.value || '';
+    let liste = ipFaaliyetler.filter(f =>
+      (!dept || f.departman===dept) && (!durum || f.durum===durum)
+    );
+
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="${S.cardTitle}margin-bottom:0;">☰ Faaliyet Listesi (${liste.length})</div>
+          <button onclick="ipYeniFaaliyet()" style="${S.btn}background:var(--ac);color:#fff;font-size:11px;padding:6px 14px;">+ Yeni</button>
+        </div>
+        ${liste.length===0?`<div style="padding:24px;text-align:center;color:var(--mt);font-size:11px;">Kayıt bulunamadı</div>`:
+        liste.map(f=>`
+          <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--bd);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:4px;">${f.faaliyet_adi||''}</div>
+                <div style="font-size:10px;color:var(--mt2);">${f.ana_gorev||''} › ${f.alt_gorev||''}</div>
+                <div style="display:flex;gap:12px;margin-top:6px;font-size:9.5px;color:var(--mt);">
+                  <span>🏢 ${f.departman||'—'}</span>
+                  <span>📅 ${f.baslangic_tarihi||'—'} → ${f.bitis_tarihi||'—'}</span>
+                  <span>👤 ${f.sorumlu||'—'}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <select onchange="ipDurumGuncelle('${f.id}',this.value)" style="font-size:9px;padding:3px 8px;border-radius:16px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx);cursor:pointer;">
+                  ${['baslayacak','devam','tamamlandi','beklemede','iptal'].map(d=>
+                    `<option value="${d}" ${f.durum===d?'selected':''}>${d==='baslayacak'?'Başlayacak':d==='devam'?'Devam Ediyor':d==='tamamlandi'?'Tamamlandı':d==='beklemede'?'Beklemede':'İptal'}</option>`
+                  ).join('')}
+                </select>
+                <div style="font-size:9px;color:var(--mt);">${f.tamamlanma_pct||0}% tamamlandı</div>
+              </div>
+            </div>
+            ${f.tamamlanma_pct>0?`
+              <div style="background:var(--bg2);border-radius:3px;height:4px;margin-top:8px;overflow:hidden;">
+                <div style="width:${f.tamamlanma_pct}%;height:100%;background:${f.tamamlanma_pct>=100?'var(--gn)':'var(--ac)'};border-radius:3px;"></div>
+              </div>`:''}
+          </div>`).join('')}
+      </div>`;
+  }
+
+  else if(sayfa === 'ip-departman') {
+    const deptGruplari = {};
+    ipFaaliyetler.forEach(f => {
+      const d = f.departman||'Diğer';
+      if(!deptGruplari[d]) deptGruplari[d]=[];
+      deptGruplari[d].push(f);
+    });
+
+    el.innerHTML = `<div style="${S.card}">
+      <div style="${S.cardTitle}">◈ Departman Bazlı Görünüm</div>
+      ${Object.keys(deptGruplari).length===0?
+        `<div style="color:var(--mt);font-size:11px;padding:8px;">Veri yok — faaliyet ekleyin</div>`:
+        Object.entries(deptGruplari).map(([dept,faaliyetler])=>{
+          const tam=faaliyetler.filter(f=>f.durum==='tamamlandi').length;
+          const pct=Math.round(tam/faaliyetler.length*100);
+          return `
+          <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--bd);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;color:var(--tx);">${dept}</span>
+              <span style="font-size:10px;color:var(--mt);">${tam}/${faaliyetler.length} · %${pct}</span>
+            </div>
+            <div style="background:var(--bg2);border-radius:3px;height:5px;overflow:hidden;margin-bottom:8px;">
+              <div style="width:${pct}%;height:100%;background:${pct>=100?'var(--gn)':pct>=60?'var(--gold)':'var(--ac)'};border-radius:3px;"></div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${faaliyetler.slice(0,5).map(f=>`
+                <span style="font-size:9px;padding:2px 8px;border-radius:12px;background:${
+                  f.durum==='tamamlandi'?'rgba(62,207,142,.1)':f.durum==='devam'?'rgba(240,192,96,.1)':'rgba(255,255,255,.05)'
+                };color:${f.durum==='tamamlandi'?'var(--gn)':f.durum==='devam'?'var(--gold)':'var(--mt)'};">${f.faaliyet_adi||''}</span>`
+              ).join('')}
+              ${faaliyetler.length>5?`<span style="font-size:9px;color:var(--mt);">+${faaliyetler.length-5} daha</span>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`;
+  }
+
+  else if(sayfa === 'ip-rapor') {
+    const toplam = ipFaaliyetler.length;
+    const durumlar = {baslayacak:0,devam:0,tamamlandi:0,beklemede:0,iptal:0};
+    ipFaaliyetler.forEach(f=>{if(f.durum && durumlar[f.durum]!==undefined) durumlar[f.durum]++;});
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◎ Tamamlanma Raporu</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${Object.entries({
+            'Başlayacak':[durumlar.baslayacak,'var(--ac2)'],
+            'Devam Ediyor':[durumlar.devam,'var(--gold)'],
+            'Tamamlandı':[durumlar.tamamlandi,'var(--gn)'],
+            'Beklemede':[durumlar.beklemede,'var(--mt)'],
+            'İptal':[durumlar.iptal,'var(--rd)'],
+            'TOPLAM':[toplam,'var(--tx)']
+          }).map(([lbl,[val,c]])=>`
+            <div style="background:var(--bg3);border-radius:8px;padding:12px;border:1px solid var(--bd);">
+              <div style="font-size:20px;font-weight:800;color:${c};">${val}</div>
+              <div style="font-size:9px;color:var(--mt);">${lbl}</div>
+            </div>`).join('')}
+        </div>
+        <div style="margin-top:16px;">
+          <button onclick="goTo(9);reSetTemplate('is_plani_raporu')" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);">📄 AI Rapor Üret</button>
+        </div>
+      </div>`;
+  }
+
+  else if(sayfa === 'ip-takvim') {
+    const bugun = new Date();
+    const aylar = [];
+    for(let i=0;i<3;i++){
+      const d=new Date(bugun.getFullYear(), bugun.getMonth()+i, 1);
+      aylar.push({yil:d.getFullYear(), ay:d.getMonth(), adi:d.toLocaleString('tr-TR',{month:'long',year:'numeric'})});
+    }
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◫ Takvim — Önümüzdeki 3 Ay</div>
+        ${aylar.map(({yil,ay,adi})=>{
+          const ayFaaliyetler = ipFaaliyetler.filter(f=>{
+            if(!f.bitis_tarihi) return false;
+            const d=new Date(f.bitis_tarihi);
+            return d.getFullYear()===yil && d.getMonth()===ay;
+          });
+          return `
+          <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--bd);">
+            <div style="font-size:11px;font-weight:700;color:var(--ac2);margin-bottom:8px;">${adi} (${ayFaaliyetler.length} faaliyet)</div>
+            ${ayFaaliyetler.length===0?`<div style="font-size:10px;color:var(--mt);">Bu ayda bitiş tarihi olan faaliyet yok</div>`:
+              ayFaaliyetler.map(f=>`
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);">
+                  <span style="font-size:10px;color:var(--mt);min-width:28px;">${new Date(f.bitis_tarihi).getDate()}</span>
+                  <span style="font-size:10px;flex:1;color:var(--tx);">${f.faaliyet_adi||''}</span>
+                  <span style="font-size:9px;color:var(--mt2);">${f.departman||''}</span>
+                  <div style="width:6px;height:6px;border-radius:50%;background:${
+                    f.durum==='tamamlandi'?'var(--gn)':f.durum==='devam'?'var(--gold)':'var(--rd)'
+                  };"></div>
+                </div>`).join('')}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+}
+
+function ipYeniFaaliyet() {
+  const el = document.getElementById('ip-main');
+  if(!el) return;
+  const deptOpts = IP_DEPARTMANLAR.map(d=>`<option value="${d}">${d}</option>`).join('');
+  el.innerHTML = `
+    <div style="${S.card}">
+      <div style="${S.cardTitle}">+ Yeni Faaliyet</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Faaliyet Adı *</label>
+          <input id="ip-f-adi" style="${S.inp}" placeholder="Faaliyet adını girin..."></div>
+        <div><label style="${S.lbl}">Departman *</label>
+          <select id="ip-f-dept" style="${S.inp}padding:8px 11px;">${deptOpts}</select></div>
+        <div><label style="${S.lbl}">Ana Görev Grubu</label>
+          <select id="ip-f-ana" style="${S.inp}padding:8px 11px;">
+            <option>Sezon Açılış İşlemleri</option>
+            <option>Sezon Faaliyetleri</option>
+            <option>Sezon Kapanış İşlemleri</option>
+            <option>Yıl Boyu Faaliyetler</option>
+          </select></div>
+        <div><label style="${S.lbl}">Alt Görev Grubu</label>
+          <input id="ip-f-alt" style="${S.inp}" placeholder="Alt grup adı..."></div>
+        <div><label style="${S.lbl}">Sorumlu Unvan</label>
+          <input id="ip-f-sorumlu" style="${S.inp}" placeholder="Müdür, Uzman..."></div>
+        <div><label style="${S.lbl}">Başlangıç Tarihi</label>
+          <input id="ip-f-bas" type="date" style="${S.inp}" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div><label style="${S.lbl}">Bitiş Tarihi</label>
+          <input id="ip-f-bit" type="date" style="${S.inp}"></div>
+        <div><label style="${S.lbl}">Süre (Gün)</label>
+          <input id="ip-f-sure" type="number" style="${S.inp}" placeholder="0"></div>
+        <div><label style="${S.lbl}">Durum</label>
+          <select id="ip-f-durum" style="${S.inp}padding:8px 11px;">
+            <option value="baslayacak">Başlayacak</option>
+            <option value="devam">Devam Ediyor</option>
+            <option value="tamamlandi">Tamamlandı</option>
+            <option value="beklemede">Beklemede</option>
+          </select></div>
+        <div><label style="${S.lbl}">Öncelik</label>
+          <select id="ip-f-oncelik" style="${S.inp}padding:8px 11px;">
+            <option value="yuksek">Yüksek</option>
+            <option value="orta" selected>Orta</option>
+            <option value="dusuk">Düşük</option>
+          </select></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Not / Açıklama</label>
+          <textarea id="ip-f-not" style="${S.ta}" rows="2" placeholder="Opsiyonel..."></textarea></div>
+      </div>
+      <button onclick="ipKaydet()" style="${S.btn}background:var(--ac);color:#fff;">Kaydet</button>
+      <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">İptal</button>
+    </div>`;
+}
+
+async function ipKaydet() {
+  const adi = document.getElementById('ip-f-adi')?.value?.trim();
+  const dept = document.getElementById('ip-f-dept')?.value;
+  if(!adi || !dept) { N('Faaliyet adı ve departman zorunlu'); return; }
+  const yeni = {
+    isletme_id: AKTIF_ISLETME?.id,
+    faaliyet_adi: adi,
+    departman: dept,
+    ana_gorev: document.getElementById('ip-f-ana')?.value||null,
+    alt_gorev: document.getElementById('ip-f-alt')?.value||null,
+    sorumlu: document.getElementById('ip-f-sorumlu')?.value||null,
+    baslangic_tarihi: document.getElementById('ip-f-bas')?.value||null,
+    bitis_tarihi: document.getElementById('ip-f-bit')?.value||null,
+    sure_gun: parseInt(document.getElementById('ip-f-sure')?.value)||null,
+    durum: document.getElementById('ip-f-durum')?.value||'baslayacak',
+    oncelik: document.getElementById('ip-f-oncelik')?.value||'orta',
+    not_aciklama: document.getElementById('ip-f-not')?.value||null,
+    tamamlanma_pct: 0,
+    olusturma_tarihi: new Date().toISOString()
+  };
+  const kayit = await dbInsert('is_plani', yeni);
+  if(kayit) {
+    N('✅ Faaliyet kaydedildi');
+    await ipYukle();
+    ipGit('ip-liste');
+  } else {
+    N('❌ Kayıt başarısız — Supabase tablosunu kontrol edin');
+  }
+}
+
+async function ipDurumGuncelle(id, yeniDurum) {
+  const pct = yeniDurum==='tamamlandi'?100:undefined;
+  const updates = {durum:yeniDurum, guncelleme_tarihi:new Date().toISOString()};
+  if(pct!==undefined) updates.tamamlanma_pct=pct;
+  const sonuc = await dbUpdate('is_plani', id, updates);
+  if(sonuc) { N(`✅ Durum: ${yeniDurum}`); await ipYukle(); }
+}
+
+function ipFiltrele() { ipRenderSayfa('ip-liste'); }
+
+function ipExcelImport() {
+  document.getElementById('ip-excel-input')?.click();
+}
+
+async function ipExcelOku(event) {
+  const file = event.target.files?.[0];
+  if(!file) return;
+  N(`📂 ${file.name} okunuyor...`);
+  // SheetJS ile parse
+  const buf = await file.arrayBuffer();
+  try {
+    const XLSX = window.XLSX;
+    if(!XLSX) { N('❌ XLSX kütüphanesi yüklü değil'); return; }
+    const wb = XLSX.read(buf, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    if(rows.length < 2) { N('❌ Excel boş veya hatalı'); return; }
+    // Header satırını atla
+    const dataRows = rows.slice(1).filter(r => r[4] && String(r[4]).trim());
+    let sayac = 0;
+    for(const row of dataRows.slice(0,500)) {
+      const yeni = {
+        isletme_id: AKTIF_ISLETME?.id,
+        departman: String(row[0]||'').trim() || null,
+        ana_gorev: String(row[1]||'').trim() || null,
+        alt_gorev: String(row[2]||'').trim() || null,
+        faaliyet_adi: String(row[4]||'').trim() || null,
+        sure_gun: parseInt(row[5])||null,
+        sorumlu: String(row[8]||'').trim() || null,
+        durum: 'baslayacak',
+        tamamlanma_pct: 0,
+        oncelik: 'orta',
+        olusturma_tarihi: new Date().toISOString()
+      };
+      if(!yeni.faaliyet_adi) continue;
+      const k = await dbInsert('is_plani', yeni);
+      if(k) sayac++;
+    }
+    N(`✅ ${sayac} faaliyet içe aktarıldı`);
+    await ipYukle();
+    ipGit('ip-dashboard');
+  } catch(e) {
+    N('❌ Excel okunamadı: ' + e.message);
+  }
+  event.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════════
+// M12 — KPI CANLI TAKİP SİSTEMİ
+// ═══════════════════════════════════════════════════════
+
+const KPI_MENU = [
+  {id:'kpi-dashboard', label:'KPI Dashboard', icon:'◉'},
+  {id:'kpi-liste',     label:'KPI Listesi', icon:'☰'},
+  {id:'kpi-giris',     label:'Veri Girişi', icon:'✎'},
+  {id:'kpi-analiz',    label:'X-Layer Analiz', icon:'◈'},
+  {id:'kpi-okr-link',  label:'OKR Bağlantısı', icon:'◎'},
+];
+
+const KPI_XLAYER_RENK = {
+  'CX':'rgba(53,162,235,.15)','EX':'rgba(62,207,142,.15)',
+  'OX':'rgba(240,192,96,.15)','BX':'rgba(242,107,107,.15)',
+  'QX':'rgba(124,106,247,.15)'
+};
+const KPI_XLAYER_COLOR = {
+  'CX':'var(--ac2)','EX':'var(--gn)','OX':'var(--gold)','BX':'var(--rd)','QX':'var(--ac)'
+};
+
+let kpiAktifSayfa = 'kpi-dashboard';
+let kpiVeriler = [];
+let kpiGerceklesenler = [];
+
+async function initKPITakip() {
+  renderKPIMenu();
+  await kpiYukle();
+}
+
+function renderKPIMenu() {
+  const el = document.getElementById('kpi-menu');
+  if(!el) return;
+  el.innerHTML = KPI_MENU.map(m=>`
+    <div onclick="kpiGit('${m.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;
+      background:${kpiAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'};
+      border:1px solid ${kpiAktifSayfa===m.id?'var(--ac)':'transparent'};">
+      <span style="font-size:11px;color:var(--ac2);">${m.icon}</span>
+      <span style="font-size:11px;font-weight:${kpiAktifSayfa===m.id?700:500};color:${kpiAktifSayfa===m.id?'var(--ac2)':'var(--mt2)'};">${m.label}</span>
+    </div>`).join('');
+}
+
+function kpiGit(sayfa) {
+  kpiAktifSayfa = sayfa;
+  renderKPIMenu();
+  kpiRenderSayfa(sayfa);
+}
+
+async function kpiYukle() {
+  const el = document.getElementById('kpi-main');
+  if(!el) return;
+  el.innerHTML = `<div style="padding:32px;text-align:center;color:var(--mt);font-size:12px;">⏳ KPI verileri yükleniyor...</div>`;
+  try {
+    kpiVeriler = await dbGet('kpi_tanim', {isletme_id: AKTIF_ISLETME?.id});
+    kpiGerceklesenler = await dbGet('kpi_gerceklesen', {isletme_id: AKTIF_ISLETME?.id});
+  } catch(e) { kpiVeriler = []; kpiGerceklesenler = []; }
+  kpiRenderSayfa(kpiAktifSayfa);
+}
+
+function kpiRenderSayfa(sayfa) {
+  const el = document.getElementById('kpi-main');
+  if(!el) return;
+
+  if(sayfa === 'kpi-dashboard') {
+    const xlayerGrup = {CX:[],EX:[],OX:[],BX:[],QX:[]};
+    kpiVeriler.forEach(k => {
+      const xl = (k.x_layer||'OX').split('+')[0].trim();
+      if(xlayerGrup[xl]) xlayerGrup[xl].push(k);
+    });
+
+    // Her KPI için son gerçekleşen bul
+    const sonGerceklesen = {};
+    kpiGerceklesenler.forEach(g => {
+      if(!sonGerceklesen[g.kpi_id] || new Date(g.olcum_tarihi)>new Date(sonGerceklesen[g.kpi_id].olcum_tarihi))
+        sonGerceklesen[g.kpi_id] = g;
+    });
+
+    const kpiSayisi = kpiVeriler.length;
+    const girilenSayi = Object.keys(sonGerceklesen).length;
+    const eksikSayi = kpiSayisi - girilenSayi;
+
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◉ KPI Dashboard — ${new Date().toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          ${[
+            {lbl:'Toplam KPI',val:kpiSayisi||'—',c:'var(--tx)'},
+            {lbl:'Veri Girilen',val:girilenSayi||'—',c:'var(--gn)'},
+            {lbl:'Eksik',val:eksikSayi||'—',c:'var(--rd)'},
+          ].map(m=>`
+            <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--bd);">
+              <div style="font-size:22px;font-weight:800;color:${m.c};">${m.val}</div>
+              <div style="font-size:9px;color:var(--mt);margin-top:3px;">${m.lbl}</div>
+            </div>`).join('')}
+        </div>
+
+        ${kpiSayisi===0?`
+          <div style="padding:24px;text-align:center;color:var(--mt);font-size:12px;">
+            <div style="font-size:14px;margin-bottom:8px;">KPI tanımı bulunamadı</div>
+            <div style="font-size:11px;margin-bottom:16px;">Excel'den KPI listesini import edin</div>
+            <button onclick="kpiExcelImport()" style="${S.btn}background:var(--ac);color:#fff;">↑ KPI Excel İmport</button>
+          </div>`:
+
+        `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${Object.entries(xlayerGrup).map(([xl,kpiler])=>{
+            const girilenXl = kpiler.filter(k=>sonGerceklesen[k.id]).length;
+            const oran = kpiler.length ? Math.round(girilenXl/kpiler.length*100) : 0;
+            return `
+            <div style="background:${KPI_XLAYER_RENK[xl]||'var(--bg3)'};border-radius:8px;padding:12px;border:1px solid var(--bd);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;font-weight:700;color:${KPI_XLAYER_COLOR[xl]||'var(--tx)'};">${xl}</span>
+                <span style="font-size:10px;color:var(--mt);">${kpiler.length} KPI</span>
+              </div>
+              <div style="background:rgba(0,0,0,.15);border-radius:3px;height:5px;overflow:hidden;margin-bottom:6px;">
+                <div style="width:${oran}%;height:100%;background:${KPI_XLAYER_COLOR[xl]||'var(--ac)'};border-radius:3px;"></div>
+              </div>
+              <div style="font-size:9.5px;color:var(--mt);">%${oran} veri girişi tamamlandı</div>
+            </div>`;
+          }).join('')}
+        </div>`}
+      </div>
+
+      <div style="${S.card}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="${S.cardTitle}margin-bottom:0;">Son Girilen Veriler</div>
+          <button onclick="kpiGercekGirisFormu()" style="${S.btn}background:var(--ac);color:#fff;font-size:11px;padding:6px 14px;">+ Gerçekleşen Gir</button>
+        </div>
+        ${kpiGerceklesenler.slice(-8).reverse().map(g=>{
+          const kpi = kpiVeriler.find(k=>k.id===g.kpi_id);
+          const xl = (kpi?.x_layer||'OX').split('+')[0].trim();
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);">
+            <div style="width:28px;height:18px;border-radius:4px;background:${KPI_XLAYER_RENK[xl]||'var(--bg3)'};display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:8px;font-weight:700;color:${KPI_XLAYER_COLOR[xl]||'var(--tx)'};">${xl}</span>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:11px;color:var(--tx);">${kpi?.kpi_adi||g.kpi_id||'—'}</div>
+              <div style="font-size:9.5px;color:var(--mt);">${kpi?.departman||''} · ${g.olcum_tarihi||''}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;font-weight:700;color:var(--tx);">${g.gerceklesen_deger??'—'}</div>
+              <div style="font-size:9px;color:var(--mt);">Hedef: ${kpi?.hedef_2026||'—'}</div>
+            </div>
+          </div>`;
+        }).join('') || '<div style="color:var(--mt);font-size:11px;padding:8px 0;">Henüz veri girilmedi</div>'}
+      </div>`;
+  }
+
+  else if(sayfa === 'kpi-liste') {
+    const xlFiltre = document.getElementById('kpi-xlayer-filtre')?.value||'';
+    let liste = kpiVeriler.filter(k=>!xlFiltre||k.x_layer?.includes(xlFiltre));
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="${S.cardTitle}margin-bottom:0;">☰ KPI Listesi (${liste.length})</div>
+          <button onclick="kpiExcelImport()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);font-size:11px;padding:6px 14px;">↑ Excel İmport</button>
+        </div>
+        ${liste.length===0?`<div style="padding:24px;text-align:center;color:var(--mt);font-size:11px;">KPI bulunamadı — Excel import edin</div>`:
+        liste.map(k=>{
+          const xl = (k.x_layer||'OX').split('+')[0].trim();
+          const son = kpiGerceklesenler.filter(g=>g.kpi_id===k.id).sort((a,b)=>new Date(b.olcum_tarihi)-new Date(a.olcum_tarihi))[0];
+          return `
+          <div style="background:var(--bg3);border-radius:8px;padding:11px;margin-bottom:7px;border:1px solid var(--bd);">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <div style="min-width:32px;height:20px;border-radius:4px;background:${KPI_XLAYER_RENK[xl]||'var(--bg2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                <span style="font-size:8px;font-weight:700;color:${KPI_XLAYER_COLOR[xl]||'var(--mt)'};">${xl}</span>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:700;color:var(--tx);">${k.kpi_adi||''}</div>
+                <div style="font-size:9.5px;color:var(--mt2);margin-top:2px;">${k.departman||''} · Hedef: ${k.hedef_2026||'—'} · Ağırlık: ${k.agirlik?Math.round(k.agirlik*100)+'%':'—'}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                ${son?`<div style="font-size:13px;font-weight:700;color:var(--gn);">${son.gerceklesen_deger}</div>
+                        <div style="font-size:9px;color:var(--mt);">${son.olcum_tarihi}</div>`:
+                       `<div style="font-size:10px;color:var(--rd);">Veri yok</div>`}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  else if(sayfa === 'kpi-giris') {
+    kpiGercekGirisFormu();
+  }
+
+  else if(sayfa === 'kpi-analiz') {
+    const xlayerOzet = {};
+    ['CX','EX','OX','BX','QX'].forEach(xl => {
+      const xlKpis = kpiVeriler.filter(k=>k.x_layer?.includes(xl));
+      const agirlikToplam = xlKpis.reduce((s,k)=>s+(parseFloat(k.agirlik)||0),0);
+      xlayerOzet[xl] = {sayi:xlKpis.length, agirlik:agirlikToplam};
+    });
+    const qxFormul = 'CX×0.40 + EX×0.25 + OX×0.25 + BX×0.10';
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◈ X-Layer KPI Analizi</div>
+        ${['CX','EX','OX','BX','QX'].map(xl=>{
+          const oz=xlayerOzet[xl];
+          return `
+          <div style="background:${KPI_XLAYER_RENK[xl]||'var(--bg3)'};border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--bd);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="font-size:13px;font-weight:700;color:${KPI_XLAYER_COLOR[xl]||'var(--tx)'};">${xl}</span>
+                <span style="font-size:10px;color:var(--mt);margin-left:8px;">${
+                  xl==='CX'?'Misafir Deneyimi (%40)':xl==='EX'?'Çalışan Deneyimi (%25)':xl==='OX'?'Operasyon Kalitesi (%25)':xl==='BX'?'Marka & Ticari (%10)':'Bileşik Kalite İndeksi'
+                }</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:12px;font-weight:700;color:var(--tx);">${oz.sayi} KPI</div>
+                <div style="font-size:9px;color:var(--mt);">Ağırlık: ${Math.round(oz.agirlik*100)||'—'}%</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="margin-top:12px;background:var(--bg3);border-radius:8px;padding:12px;border:1px solid var(--bd);">
+          <div style="font-size:10px;font-weight:700;color:var(--ac2);margin-bottom:6px;">QX Formülü</div>
+          <div style="font-size:12px;font-family:'Fira Code',monospace;color:var(--tx);">${qxFormul}</div>
+          <div style="font-size:10px;color:var(--mt);margin-top:6px;">Baseline: 70.4 · Hedef: 83 · Değer Noktası: 86+</div>
+        </div>
+      </div>`;
+  }
+
+  else if(sayfa === 'kpi-okr-link') {
+    const okrler = AKTIF_OKRLER || [];
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◎ KPI → OKR Bağlantısı</div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px;border:1px solid var(--bd);">
+          <div style="font-size:10px;color:var(--mt2);margin-bottom:8px;">Kaskad Mantığı</div>
+          <div style="font-size:11px;color:var(--tx);line-height:1.8;">
+            GM OKR (QX: 70.4 → 83)<br>
+            └ CX KPI ortalaması → CX skoru → QX'e %40 katkı<br>
+            └ EX KPI ortalaması → EX skoru → QX'e %25 katkı<br>
+            └ OX KPI ortalaması → OX skoru → QX'e %25 katkı<br>
+            └ BX KPI ortalaması → BX skoru → QX'e %10 katkı
+          </div>
+        </div>
+        ${okrler.length===0?`<div style="color:var(--mt);font-size:11px;">OKR verisi yok — M08 OKR modülüne gidin</div>`:
+          okrler.slice(0,5).map(o=>`
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:7px;border:1px solid var(--bd);">
+            <div style="font-size:11px;font-weight:700;color:var(--tx);">${o.okr_baslik||o.hedef||''}</div>
+            <div style="display:flex;gap:8px;margin-top:4px;font-size:9.5px;color:var(--mt);">
+              <span>Başlangıç: ${o.baslangic_degeri||'—'}</span>
+              <span>Hedef: ${o.hedef_degeri||'—'}</span>
+              <span>X-Layer: ${o.x_layer||'—'}</span>
+            </div>
+          </div>`).join('')}
+        <div style="margin-top:12px;">
+          <button onclick="goTo(8)" style="${S.btn}background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--ac2);">→ OKR Modülüne Git</button>
+        </div>
+      </div>`;
+  }
+}
+
+function kpiGercekGirisFormu() {
+  const el = document.getElementById('kpi-main');
+  if(!el) return;
+  const kpiOpts = kpiVeriler.slice(0,100).map(k=>`<option value="${k.id}">[${k.x_layer||'—'}] ${k.kpi_adi||''} (${k.departman||''})</option>`).join('');
+  el.innerHTML = `
+    <div style="${S.card}">
+      <div style="${S.cardTitle}">✎ Gerçekleşen Veri Girişi</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">KPI Seçin *</label>
+          <select id="kpi-g-id" style="${S.inp}padding:8px 11px;">${kpiOpts||'<option>KPI bulunamadı — önce import edin</option>'}</select></div>
+        <div><label style="${S.lbl}">Gerçekleşen Değer *</label>
+          <input id="kpi-g-deger" type="number" step="0.01" style="${S.inp}" placeholder="0.00"></div>
+        <div><label style="${S.lbl}">Ölçüm Tarihi</label>
+          <input id="kpi-g-tarih" type="date" style="${S.inp}" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div><label style="${S.lbl}">Dönem</label>
+          <select id="kpi-g-donem" style="${S.inp}padding:8px 11px;">
+            <option value="haftalik">Haftalık</option>
+            <option value="aylik" selected>Aylık</option>
+            <option value="ceyreklik">Çeyreklik</option>
+          </select></div>
+        <div><label style="${S.lbl}">Veri Kaynağı</label>
+          <input id="kpi-g-kaynak" style="${S.inp}" placeholder="Opex, PMS, Anket..."></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Not</label>
+          <textarea id="kpi-g-not" style="${S.ta}" rows="2" placeholder="Opsiyonel..."></textarea></div>
+      </div>
+      <button onclick="kpiGercekKaydet()" style="${S.btn}background:var(--ac);color:#fff;">Kaydet</button>
+      <button onclick="kpiGit('kpi-dashboard')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">İptal</button>
+    </div>`;
+}
+
+async function kpiGercekKaydet() {
+  const kpiId = document.getElementById('kpi-g-id')?.value;
+  const deger = document.getElementById('kpi-g-deger')?.value;
+  if(!kpiId || deger==='') { N('KPI ve değer zorunlu'); return; }
+  const yeni = {
+    isletme_id: AKTIF_ISLETME?.id,
+    kpi_id: kpiId,
+    gerceklesen_deger: parseFloat(deger),
+    olcum_tarihi: document.getElementById('kpi-g-tarih')?.value||new Date().toISOString().split('T')[0],
+    donem: document.getElementById('kpi-g-donem')?.value||'aylik',
+    veri_kaynagi: document.getElementById('kpi-g-kaynak')?.value||null,
+    not_aciklama: document.getElementById('kpi-g-not')?.value||null,
+    olusturma_tarihi: new Date().toISOString()
+  };
+  const kayit = await dbInsert('kpi_gerceklesen', yeni);
+  if(kayit) { N('✅ Veri kaydedildi'); await kpiYukle(); kpiGit('kpi-dashboard'); }
+  else N('❌ Kayıt başarısız');
+}
+
+function kpiDonemdegis() { kpiRenderSayfa(kpiAktifSayfa); }
+function kpiXLayerFiltrele() { kpiRenderSayfa('kpi-liste'); }
+
+function kpiExcelImport() {
+  document.getElementById('kpi-excel-input')?.click();
+}
+
+async function kpiExcelOku(event) {
+  const file = event.target.files?.[0];
+  if(!file) return;
+  N(`📂 ${file.name} okunuyor...`);
+  const buf = await file.arrayBuffer();
+  try {
+    const XLSX = window.XLSX;
+    if(!XLSX) { N('❌ XLSX kütüphanesi yüklü değil'); return; }
+    const wb = XLSX.read(buf,{type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    let sayac=0;
+    for(const row of rows.slice(1).slice(0,300)) {
+      const kpiAdi = String(row[2]||'').trim();
+      if(!kpiAdi) continue;
+      const yeni = {
+        isletme_id: AKTIF_ISLETME?.id,
+        departman: String(row[1]||'').trim()||null,
+        kpi_adi: kpiAdi,
+        birim: String(row[3]||'').trim()||null,
+        formul: String(row[4]||'').trim()||null,
+        agirlik: parseFloat(row[5])||null,
+        hedef_2026: String(row[7]||'').trim()||null,
+        veri_kaynagi: String(row[8]||'').trim()||null,
+        x_layer: String(row[9]||'OX').trim()||'OX',
+        olcum_sikligi: 'aylik',
+        olusturma_tarihi: new Date().toISOString()
+      };
+      const k = await dbInsert('kpi_tanim', yeni);
+      if(k) sayac++;
+    }
+    N(`✅ ${sayac} KPI içe aktarıldı`);
+    await kpiYukle();
+    kpiGit('kpi-dashboard');
+  } catch(e) { N('❌ Excel okunamadı: ' + e.message); }
+  event.target.value='';
+}
+
+başlat();
 </script>
 
 </body>
