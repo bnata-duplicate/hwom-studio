@@ -384,6 +384,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     <div class="tb-step" id="tab10" onclick="goTo(10)"><span class="step-n">10</span>Quality OS</div>
     <div class="tb-step" id="tab11" onclick="goTo(11)"><span class="step-n">11</span>İş Planı</div>
     <div class="tb-step" id="tab12" onclick="goTo(12)"><span class="step-n">12</span>KPI Takip</div>
+    <div class="tb-step" id="tab13" onclick="goTo(13)"><span class="step-n">13</span>ATLAS SIA</div>
   </div>
   <div class="tb-right">
     <div class="live-pill"><div class="live-dot"></div><span id="clockDisplay">—</span></div>
@@ -624,11 +625,11 @@ let openMods = {};
 
 // ══ NAVIGATION ══
 function goTo(n) {
-  for(let i=0;i<=12;i++){
+  for(let i=0;i<=13;i++){
     const s=document.getElementById('s'+i);
     if(s) s.classList.toggle('active', i===n);
   }
-  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10','tab11','tab12'].forEach((id,i)=>{
+  ['tab0','tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10','tab11','tab12','tab13'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el){
       el.classList.toggle('active',i===n);
@@ -647,6 +648,7 @@ function goTo(n) {
   if(n===10) initQualityOS();
   if(n===11) initIsPlani();
   if(n===12) initKPITakip();
+  if(n===13) initATLAS();
 }
 
 function loadDemo() {
@@ -1305,6 +1307,41 @@ function init(){
     <div style="flex:1;overflow-y:auto;padding:20px;" id="kpi-main"></div>
   </div>
   <input type="file" id="kpi-excel-input" accept=".xlsx,.xls" style="display:none" onchange="kpiExcelOku(event)">
+</div>
+
+<!-- ═══ M13 ATLAS SIA ═══ -->
+<div class="screen" id="s13">
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <!-- Sidebar -->
+    <div style="width:220px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px;overflow-y:auto;flex-shrink:0;">
+      <div style="font-size:9px;font-weight:700;color:var(--ac2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">ATLAS SIA</div>
+      <div style="font-size:9px;color:var(--mt);margin-bottom:12px;">Strategic Intelligence & Alignment</div>
+      <div id="atlas-menu" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Analiz Parametreleri</div>
+        <select id="atlas-paydas" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;margin-bottom:6px;">
+          <option value="gm">Genel Müdür Görünümü</option>
+          <option value="dept">Departman Müdürü</option>
+          <option value="ops">Operasyon Ekibi</option>
+        </select>
+        <select id="atlas-donem" style="width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;margin-bottom:6px;">
+          <option value="haftalik">Bu Hafta</option>
+          <option value="aylik" selected>Bu Ay</option>
+          <option value="ceyreklik">Bu Çeyrek</option>
+          <option value="yillik">2026 Yılı</option>
+        </select>
+        <button onclick="atlasAnalizBaslat()" style="width:100%;padding:9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;background:var(--ac);color:#fff;margin-top:4px;">
+          ◎ Analiz Başlat
+        </button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px;">
+        <div style="font-size:9px;color:var(--mt);margin-bottom:6px;">Metodoloji</div>
+        <div style="font-size:9px;color:var(--mt2);line-height:1.7;">BSC × OKR × X-Layer<br>Convergence Model<br><span style="color:var(--ac2);">by HumanSoft</span></div>
+      </div>
+    </div>
+    <!-- Ana içerik -->
+    <div style="flex:1;overflow-y:auto;padding:20px;" id="atlas-main"></div>
+  </div>
 </div>
 
 <script>
@@ -2815,6 +2852,319 @@ async function qosCapaEkle(bulguId) {
 }
 
 // ═══════════════════════════════════════════════════════
+// M13 — ATLAS SIA: Strategic Intelligence & Alignment
+// BSC × OKR × X-Layer Convergence Model
+// ═══════════════════════════════════════════════════════
+
+const ATLAS_MENU = [
+  {id:'atlas-overview',  label:'Genel Bakış',     icon:'◉'},
+  {id:'atlas-uyum',      label:'Uyum Analizi',    icon:'◈'},
+  {id:'atlas-bosluk',    label:'Boşluk Tespiti',  icon:'◫'},
+  {id:'atlas-risk',      label:'Risk Haritası',    icon:'⚠'},
+  {id:'atlas-aksiyon',   label:'Aksiyon Listesi', icon:'→'},
+  {id:'atlas-rapor',     label:'AI Rapor',        icon:'◎'},
+];
+
+let atlasAktifSayfa = 'atlas-overview';
+let atlasVeri = null;
+let atlasRaporMetni = '';
+
+async function initATLAS() {
+  renderATLASMenu();
+  await atlasVeriTopla();
+  atlasRenderSayfa('atlas-overview');
+}
+
+function renderATLASMenu() {
+  const el = document.getElementById('atlas-menu');
+  if(!el) return;
+  el.innerHTML = ATLAS_MENU.map(m=>`
+    <div onclick="atlasGit('${m.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;
+      background:${atlasAktifSayfa===m.id?'rgba(124,106,247,.15)':'transparent'};
+      border:1px solid ${atlasAktifSayfa===m.id?'var(--ac)':'transparent'};">
+      <span style="font-size:11px;color:var(--ac2);">${m.icon}</span>
+      <span style="font-size:11px;font-weight:${atlasAktifSayfa===m.id?700:500};color:${atlasAktifSayfa===m.id?'var(--ac2)':'var(--mt2)'};">${m.label}</span>
+    </div>`).join('');
+}
+
+function atlasGit(sayfa) {
+  atlasAktifSayfa = sayfa;
+  renderATLASMenu();
+  atlasRenderSayfa(sayfa);
+}
+
+async function atlasVeriTopla() {
+  try {
+    const [ipData, kpiData, okrData, kpiGercek] = await Promise.all([
+      dbGet('is_plani', {isletme_id: AKTIF_ISLETME?.id}),
+      dbGet('kpi_tanim', {isletme_id: AKTIF_ISLETME?.id}),
+      dbGet('okr', {isletme_id: AKTIF_ISLETME?.id}),
+      dbGet('kpi_gerceklesen', {isletme_id: AKTIF_ISLETME?.id}),
+    ]);
+    const ipToplam=ipData.length, ipTamamlandi=ipData.filter(f=>f.durum==='tamamlandi'||f.onaylandi).length;
+    const ipDevam=ipData.filter(f=>f.durum==='devam').length;
+    const ipGeciken=ipData.filter(f=>!['tamamlandi','iptal'].includes(f.durum)&&!f.onaylandi&&f.bitis_tarihi&&new Date(f.bitis_tarihi)<new Date()).length;
+    const kpiToplam=kpiData.length, kpiGirilmis=new Set(kpiGercek.map(g=>g.kpi_id)).size;
+    const xlayerDagilim={};
+    ['CX','EX','OX','BX','QX'].forEach(xl=>{
+      const xlK=kpiData.filter(k=>k.x_layer?.includes(xl));
+      xlayerDagilim[xl]={toplam:xlK.length,girilmis:xlK.filter(k=>kpiGercek.some(g=>g.kpi_id===k.id)).length,
+        pct:xlK.length?Math.round(xlK.filter(k=>kpiGercek.some(g=>g.kpi_id===k.id)).length/xlK.length*100):0,
+        agirlik:xl==='CX'?40:xl==='EX'?25:xl==='OX'?25:xl==='BX'?10:0};
+    });
+    const deptOzet={};
+    ipData.forEach(f=>{
+      const d=f.departman||'Diğer';
+      if(!deptOzet[d])deptOzet[d]={toplam:0,tamamlandi:0,geciken:0};
+      deptOzet[d].toplam++;
+      if(f.durum==='tamamlandi'||f.onaylandi)deptOzet[d].tamamlandi++;
+      if(f.bitis_tarihi&&new Date(f.bitis_tarihi)<new Date()&&f.durum!=='tamamlandi'&&!f.onaylandi)deptOzet[d].geciken++;
+    });
+    const kpiDeptler=new Set(kpiData.map(k=>k.departman));
+    const ipDeptler=new Set(ipData.map(f=>f.departman));
+    atlasVeri={
+      ip:{toplam:ipToplam,tamamlandi:ipTamamlandi,devam:ipDevam,geciken:ipGeciken,pct:ipToplam?Math.round(ipTamamlandi/ipToplam*100):0},
+      kpi:{toplam:kpiToplam,girilmis:kpiGirilmis,eksik:kpiToplam-kpiGirilmis,pct:kpiToplam?Math.round(kpiGirilmis/kpiToplam*100):0},
+      xlayer:xlayerDagilim,
+      okr:{toplam:okrData.length,qxMevcut:AKTIF_QX?.qx_hesaplanan||70.4,qxHedef:83,
+        ilerleme:Math.round(((AKTIF_QX?.qx_hesaplanan||70.4)-70.4)/(83-70.4)*100)},
+      dept:deptOzet,
+      bosluk:{kpiVarIPYok:[...kpiDeptler].filter(d=>d&&!ipDeptler.has(d)),
+              ipVarKPIYok:[...ipDeptler].filter(d=>d&&!kpiDeptler.has(d))},
+      raw:{ip:ipData,kpi:kpiData,okr:okrData,gercek:kpiGercek}
+    };
+  } catch(e){console.error('ATLAS veri hatası:',e);atlasVeri=null;}
+}
+
+function atlasRenderSayfa(sayfa) {
+  const el=document.getElementById('atlas-main');
+  if(!el)return;
+  if(!atlasVeri){
+    el.innerHTML=`<div style="${S.card}text-align:center;padding:32px;">
+      <div style="font-size:13px;color:var(--mt);margin-bottom:12px;">Veri yükleniyor...</div>
+      <button onclick="atlasVeriTopla().then(()=>atlasRenderSayfa('atlas-overview'))" style="${S.btn}background:var(--ac);color:#fff;">Yenile</button></div>`;
+    return;
+  }
+  const v=atlasVeri, xl=v.xlayer;
+
+  if(sayfa==='atlas-overview'){
+    const uyumSkoru=Math.round((v.ip.pct*0.3)+(v.kpi.pct*0.3)+(Math.max(0,v.okr.ilerleme)*0.4));
+    const uyumRenk=uyumSkoru>=70?'var(--gn)':uyumSkoru>=40?'var(--gold)':'var(--rd)';
+    el.innerHTML=`
+      <div style="${S.card}">
+        <div style="${S.cardTitle}">◉ ATLAS SIA — Stratejik Uyum Özeti</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+          ${[{lbl:'Genel Uyum',val:uyumSkoru+'%',c:uyumRenk},{lbl:'İş Planı',val:v.ip.pct+'%',c:v.ip.pct>=60?'var(--gn)':'var(--gold)'},
+             {lbl:'KPI Doluluk',val:v.kpi.pct+'%',c:v.kpi.pct>=60?'var(--gn)':'var(--gold)'},{lbl:'QX İlerleme',val:Math.max(0,v.okr.ilerleme)+'%',c:'var(--ac)'}
+          ].map(m=>`<div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--bd);">
+            <div style="font-size:22px;font-weight:800;color:${m.c};">${m.val}</div>
+            <div style="font-size:9px;color:var(--mt);margin-top:3px;">${m.lbl}</div></div>`).join('')}
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--mt2);margin-bottom:8px;">X-Layer Uyum Durumu</div>
+        ${['CX','EX','OX','BX'].map(xl_=>{
+          const d=xl[xl_];const renk=d.pct>=70?'var(--gn)':d.pct>=40?'var(--gold)':'var(--rd)';
+          return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="min-width:32px;height:20px;border-radius:4px;background:rgba(124,106,247,.1);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:9px;font-weight:700;color:var(--ac2);">${xl_}</span></div>
+            <span style="font-size:10px;color:var(--mt2);min-width:130px;">${xl_==='CX'?'Misafir':xl_==='EX'?'Çalışan':xl_==='OX'?'Operasyon':'Marka'} · %${d.agirlik} ağırlık</span>
+            <div style="flex:1;background:var(--bg3);border-radius:3px;height:8px;overflow:hidden;">
+              <div style="width:${d.pct}%;height:100%;background:${renk};border-radius:3px;"></div></div>
+            <span style="font-size:10px;color:${renk};min-width:36px;text-align:right;font-weight:700;">${d.pct}%</span>
+            <span style="font-size:9px;color:var(--mt);min-width:60px;">${d.girilmis}/${d.toplam} KPI</span>
+          </div>`;}).join('')}
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;">
+          <div style="background:rgba(242,107,107,.08);border-radius:8px;padding:10px;border:1px solid rgba(242,107,107,.2);">
+            <div style="font-size:18px;font-weight:800;color:var(--rd);">${v.ip.geciken}</div><div style="font-size:9px;color:var(--mt);">Geciken faaliyet</div></div>
+          <div style="background:rgba(240,192,96,.08);border-radius:8px;padding:10px;border:1px solid rgba(240,192,96,.2);">
+            <div style="font-size:18px;font-weight:800;color:var(--gold);">${v.kpi.eksik}</div><div style="font-size:9px;color:var(--mt);">Veri eksik KPI</div></div>
+          <div style="background:rgba(62,207,142,.08);border-radius:8px;padding:10px;border:1px solid rgba(62,207,142,.2);">
+            <div style="font-size:18px;font-weight:800;color:var(--gn);">${v.okr.qxMevcut}</div><div style="font-size:9px;color:var(--mt);">QX · Hedef: ${v.okr.qxHedef}</div></div>
+        </div>
+        <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--ac);color:#fff;width:100%;padding:10px;font-size:12px;margin-top:14px;">
+          ◎ ATLAS AI Analiz Başlat — BSC × OKR × X-Layer</button>
+      </div>`;
+  }
+
+  else if(sayfa==='atlas-uyum'){
+    const deptler=Object.entries(v.dept).sort((a,b)=>b[1].toplam-a[1].toplam).slice(0,12);
+    el.innerHTML=`<div style="${S.card}">
+      <div style="${S.cardTitle}">◈ Katmanlar Arası Uyum Analizi</div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:9.5px;color:var(--mt2);line-height:1.7;">
+        Uyum skoru = (Tamamlanma% × 0.4) + (KPI doluluk × 0.4) + (OKR ilerleme × 0.2)<br>
+        <span style="color:var(--ac2);">Metodoloji: BSC × OKR × X-Layer Convergence (HumanSoft)</span></div>
+      ${deptler.map(([dept,d])=>{
+        const kpiCount=v.raw.kpi.filter(k=>k.departman===dept).length;
+        const deptPct=d.toplam?Math.round(d.tamamlandi/d.toplam*100):0;
+        const uyum=Math.round(deptPct*0.6+(kpiCount>0?60:0)*0.4);
+        const renk=uyum>=70?'var(--gn)':uyum>=40?'var(--gold)':'var(--rd)';
+        return `<div style="background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid var(--bd);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:11px;font-weight:700;color:var(--tx);">${dept}</span>
+            <span style="font-size:11px;font-weight:700;color:${renk};">%${uyum} uyum</span></div>
+          <div style="display:flex;gap:12px;font-size:9.5px;color:var(--mt2);">
+            <span>${d.toplam} faaliyet</span><span style="color:var(--gn);">✓${d.tamamlandi}</span>
+            <span style="color:${d.geciken>0?'var(--rd)':'var(--mt)'};">⚠${d.geciken}</span>
+            <span>${kpiCount} KPI${kpiCount===0?' — KPI YOK!':''}</span></div>
+          <div style="background:var(--bg2);border-radius:3px;height:4px;margin-top:6px;overflow:hidden;">
+            <div style="width:${uyum}%;height:100%;background:${renk};border-radius:3px;"></div></div>
+        </div>`;}).join('')}
+    </div>`;
+  }
+
+  else if(sayfa==='atlas-bosluk'){
+    el.innerHTML=`<div style="${S.card}">
+      <div style="${S.cardTitle}">◫ Stratejik Boşluk Analizi</div>
+      <div style="background:rgba(242,107,107,.07);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(242,107,107,.2);">
+        <div style="font-size:11px;font-weight:700;color:var(--rd);margin-bottom:7px;">KPI var, İş Planı faaliyeti yok — ${v.bosluk.kpiVarIPYok.length} departman</div>
+        ${v.bosluk.kpiVarIPYok.length===0?`<div style="font-size:10px;color:var(--mt);">Tüm KPI departmanlarında faaliyet mevcut ✓</div>`:
+          v.bosluk.kpiVarIPYok.map(d=>`<div style="font-size:10px;color:var(--rd);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);">⚠ ${d}</div>`).join('')}
+      </div>
+      <div style="background:rgba(240,192,96,.07);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(240,192,96,.2);">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:7px;">İş Planı var, KPI yok — ${v.bosluk.ipVarKPIYok.length} departman</div>
+        ${v.bosluk.ipVarKPIYok.length===0?`<div style="font-size:10px;color:var(--mt);">Tüm faaliyet departmanlarında KPI mevcut ✓</div>`:
+          v.bosluk.ipVarKPIYok.slice(0,10).map(d=>`<div style="font-size:10px;color:var(--gold);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);">◎ ${d}</div>`).join('')}
+      </div>
+      <div style="background:rgba(242,107,107,.07);border-radius:8px;padding:12px;border:1px solid rgba(242,107,107,.2);">
+        <div style="font-size:11px;font-weight:700;color:var(--rd);margin-bottom:6px;">Veri eksik KPI — ${v.kpi.eksik} adet</div>
+        <div style="font-size:10px;color:var(--mt2);">${v.kpi.toplam} KPI tanımlı, ${v.kpi.girilmis} girişi var. <span style="color:var(--rd);">${v.kpi.eksik} KPI QX hesabına katılamıyor.</span></div>
+        <div style="background:var(--bg2);border-radius:3px;height:6px;margin-top:8px;overflow:hidden;">
+          <div style="width:${v.kpi.pct}%;height:100%;background:var(--gn);border-radius:3px;"></div></div>
+        <div style="font-size:9px;color:var(--mt);margin-top:3px;">%${v.kpi.pct} doluluk</div>
+      </div>
+    </div>`;
+  }
+
+  else if(sayfa==='atlas-risk'){
+    const gecikendeptler=Object.entries(v.dept).filter(([,d])=>d.geciken>0).sort((a,b)=>b[1].geciken-a[1].geciken);
+    el.innerHTML=`<div style="${S.card}">
+      <div style="${S.cardTitle}">⚠ Risk Haritası</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="background:rgba(242,107,107,.08);border-radius:8px;padding:12px;border:1px solid rgba(242,107,107,.2);">
+          <div style="font-size:20px;font-weight:800;color:var(--rd);">${v.ip.geciken}</div>
+          <div style="font-size:9px;color:var(--mt);">Geciken faaliyet</div>
+          <div style="font-size:9px;color:var(--rd);margin-top:2px;">QX etkisi: ${v.ip.geciken>10?'Yüksek':v.ip.geciken>5?'Orta':'Düşük'}</div></div>
+        <div style="background:rgba(240,192,96,.08);border-radius:8px;padding:12px;border:1px solid rgba(240,192,96,.2);">
+          <div style="font-size:20px;font-weight:800;color:var(--gold);">${v.kpi.eksik}</div>
+          <div style="font-size:9px;color:var(--mt);">Kör nokta KPI</div>
+          <div style="font-size:9px;color:var(--gold);margin-top:2px;">Görünmez risk alanları</div></div>
+      </div>
+      ${gecikendeptler.length>0?
+        gecikendeptler.slice(0,8).map(([dept,d])=>{
+          const risk=d.geciken>=5?'Yüksek':d.geciken>=3?'Orta':'Düşük';
+          const rRenk=risk==='Yüksek'?'var(--rd)':risk==='Orta'?'var(--gold)':'var(--mt)';
+          return `<div style="background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid var(--bd);display:flex;align-items:center;gap:12px;">
+            <div style="flex:1;"><div style="font-size:11px;font-weight:700;color:var(--tx);">${dept}</div>
+              <div style="font-size:9.5px;color:var(--mt);margin-top:2px;">${d.toplam} faaliyet · ${d.tamamlandi} tamamlandı</div></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:800;color:${rRenk};">${d.geciken} gecikmiş</div>
+              <div style="font-size:9px;color:${rRenk};">${risk} Risk</div></div>
+          </div>`;}).join(''):
+        `<div style="background:rgba(62,207,142,.08);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(62,207,142,.2);">
+          <div style="font-size:13px;color:var(--gn);font-weight:700;">Geciken faaliyet yok ✓</div></div>`}
+    </div>`;
+  }
+
+  else if(sayfa==='atlas-aksiyon'){
+    const aksiyonlar=[];
+    v.raw.ip.filter(f=>!['tamamlandi','iptal'].includes(f.durum)&&!f.onaylandi&&f.bitis_tarihi&&new Date(f.bitis_tarihi)<new Date()).slice(0,5)
+      .forEach(f=>aksiyonlar.push({oncelik:'Kritik',tip:'İş Planı',renk:'var(--rd)',
+        baslik:f.faaliyet_adi||'',aciklama:`${f.departman||''} — Bitiş: ${f.bitis_tarihi||''} — Gecikmiş`,sahip:f.sorumlu||f.departman||'—'}));
+    ['CX','EX'].forEach(xl_=>{ if(xl[xl_].pct<50) aksiyonlar.push({oncelik:'Yüksek',tip:'KPI',renk:'var(--gold)',
+      baslik:`${xl_} KPI verisi eksik — %${xl[xl_].pct} doluluk`,
+      aciklama:`${xl[xl_].girilmis}/${xl[xl_].toplam} KPI girilmiş — QX hesabına eksik katkı`,sahip:xl_==='CX'?'Misafir Deneyimi Müdürü':'İK İş Ortağı'});});
+    v.bosluk.kpiVarIPYok.slice(0,3).forEach(dept=>aksiyonlar.push({oncelik:'Orta',tip:'Boşluk',renk:'var(--ac2)',
+      baslik:`${dept} — İş Planı faaliyeti eksik`,aciklama:'KPI tanımlı ama faaliyet yok — OKR katkısı yapılamıyor',sahip:dept}));
+
+    el.innerHTML=`<div style="${S.card}">
+      <div style="${S.cardTitle}">→ ATLAS Aksiyon Listesi (${aksiyonlar.length})</div>
+      <div style="font-size:9.5px;color:var(--mt);margin-bottom:12px;">BSC × OKR × X-Layer analizinden üretilen öncelikli aksiyonlar</div>
+      ${aksiyonlar.length===0?`<div style="padding:24px;text-align:center;color:var(--mt);">Kritik aksiyon yok ✓</div>`:
+        aksiyonlar.map((a,i)=>`<div style="background:var(--bg3);border-radius:8px;padding:11px;margin-bottom:7px;border-left:3px solid ${a.renk};border:1px solid var(--bd);border-left:3px solid ${a.renk};">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:${a.renk}22;color:${a.renk};font-weight:700;white-space:nowrap;">${a.oncelik}</span>
+            <div style="flex:1;"><div style="font-size:11px;font-weight:700;color:var(--tx);">${a.baslik}</div>
+              <div style="font-size:9.5px;color:var(--mt2);margin-top:3px;">${a.aciklama}</div>
+              <div style="font-size:9px;color:var(--mt);margin-top:2px;">Sahip: ${a.sahip} · ${a.tip}</div></div>
+            <span style="font-size:9px;color:var(--mt);">#${i+1}</span></div>
+        </div>`).join('')}
+      <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--ac);color:#fff;margin-top:12px;">◎ AI ile Genişlet & Rapor Üret</button>
+    </div>`;
+  }
+
+  else if(sayfa==='atlas-rapor'){
+    el.innerHTML=`<div style="${S.card}">
+      <div style="${S.cardTitle}">◎ ATLAS AI Analiz Raporu</div>
+      ${atlasRaporMetni?`
+        <div style="font-size:11px;color:var(--tx);line-height:1.8;white-space:pre-wrap;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);">${atlasRaporMetni}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button onclick="navigator.clipboard.writeText(atlasRaporMetni).then(()=>N('Kopyalandı ✓'))" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">📋 Kopyala</button>
+          <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--ac);color:#fff;">↺ Yenile</button></div>`:
+        `<div style="padding:32px;text-align:center;color:var(--mt);">
+          <div style="font-size:13px;margin-bottom:8px;">Henüz analiz yapılmadı</div>
+          <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--ac);color:#fff;padding:10px 24px;">◎ AI Analiz Başlat</button></div>`}
+    </div>`;
+  }
+}
+
+async function atlasAnalizBaslat() {
+  const el=document.getElementById('atlas-main');
+  atlasAktifSayfa='atlas-rapor'; renderATLASMenu();
+  el.innerHTML=`<div style="${S.card}"><div style="${S.cardTitle}">◎ ATLAS AI Analiz — Çalışıyor</div>
+    <div style="padding:20px;text-align:center;">
+      <div style="font-size:12px;color:var(--ac2);margin-bottom:8px;">BSC × OKR × X-Layer analizi yapılıyor...</div>
+      <div id="atlas-stream" style="margin-top:12px;font-size:11px;color:var(--tx);line-height:1.8;text-align:left;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);min-height:80px;white-space:pre-wrap;"></div>
+    </div></div>`;
+
+  const v=atlasVeri;
+  if(!v){await atlasVeriTopla();return atlasAnalizBaslat();}
+  const paydas=document.getElementById('atlas-paydas')?.value||'gm';
+  const donem=document.getElementById('atlas-donem')?.value||'aylik';
+  const paydasTxt=paydas==='gm'?'Genel Müdür':paydas==='dept'?'Departman Müdürleri':'Operasyon Ekibi';
+  const donemTxt=donem==='haftalik'?'bu hafta':donem==='aylik'?'bu ay':donem==='ceyreklik'?'bu çeyrek':'2026 yılı';
+
+  const prompt=`Sen HWOM AI Atlas'ın ATLAS SIA (Strategic Intelligence & Alignment) ajanısın.
+Metodoloji: BSC × OKR × X-Layer Convergence Model (HumanSoft Consulting)
+
+ELİZ RESORT & SPA — ${donemTxt.toUpperCase()} STRATEJİK UYUM ANALİZİ | Paydaş: ${paydasTxt}
+
+VERİ:
+İş Planı: ${v.ip.toplam} faaliyet · %${v.ip.pct} tamamlandı · ${v.ip.geciken} gecikmiş
+KPI: ${v.kpi.toplam} tanım · %${v.kpi.pct} veri doluluk · ${v.kpi.eksik} eksik
+X-Layer: CX %${v.xlayer.CX.pct}(ağ:%40) · EX %${v.xlayer.EX.pct}(ağ:%25) · OX %${v.xlayer.OX.pct}(ağ:%25) · BX %${v.xlayer.BX.pct}(ağ:%10)
+OKR/QX: Mevcut ${v.okr.qxMevcut} → Hedef 83 · Değer noktası 86+
+Boşluklar: ${v.bosluk.kpiVarIPYok.length} dept'te KPI var faaliyet yok · ${v.bosluk.ipVarKPIYok.length} dept'te faaliyet var KPI yok
+
+${paydasTxt} için ${donemTxt} analizi üret:
+1. BSC perspektifler açısından genel uyum değerlendirmesi
+2. En kritik 3 boşluk ve OKR'a etkisi
+3. En riskli 3 alan ve çözüm önerisi
+4. Öncelikli 5 aksiyon (sahip + süre + beklenen etki)
+5. QX 83 hedefine ulaşma tahmini ve kritik yol
+
+Türkçe, pratik, madde madde.`;
+
+  const streamEl=document.getElementById('atlas-stream');
+  try {
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        messages:[{role:'user',content:prompt}]})
+    });
+    const data=await response.json();
+    const metin=data.content?.[0]?.text||'Yanıt alınamadı.';
+    atlasRaporMetni=metin;
+    if(streamEl) streamEl.textContent=metin;
+    const kart=el.querySelector('div');
+    if(kart){
+      const btnDiv=document.createElement('div');
+      btnDiv.style.cssText='margin-top:12px;display:flex;gap:8px;';
+      btnDiv.innerHTML=`<button onclick="navigator.clipboard.writeText(atlasRaporMetni).then(()=>N('Kopyalandı ✓'))" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">📋 Kopyala</button>
+        <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">↺ Yenile</button>`;
+      kart.appendChild(btnDiv);
+    }
+  } catch(e){if(streamEl)streamEl.textContent=`Hata: ${e.message}\n\nNot: Anthropic API erişimi için CORS izni gerekli.`;}
+}
+
+// ═══════════════════════════════════════════════════════
 
 const IP_DEPARTMANLAR = [
   'Bahçe & Çevre','Bilgi İşlem','Aquapark & Aktivite','Animasyon & Eğlence',
@@ -2834,6 +3184,7 @@ const IP_MENU = [
 
 let ipAktifSayfa = 'ip-dashboard';
 let ipFaaliyetler = [];
+let ipDetayId = null;
 
 async function initIsPlani() {
   renderIPMenu();
@@ -2856,9 +3207,21 @@ function renderIPMenu() {
 async function ipDoldurmaDept() {
   const sel = document.getElementById('ip-dept-filtre');
   if(!sel) return;
-  IP_DEPARTMANLAR.forEach(d => {
-    const o = document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
-  });
+  // Önce Supabase'den gerçek departman listesini çek
+  try {
+    const liste = await dbGet('is_plani', {isletme_id: AKTIF_ISLETME?.id});
+    const deptler = [...new Set(liste.map(f=>f.departman).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Tüm Departmanlar</option>';
+    deptler.forEach(d => {
+      const o = document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
+    });
+  } catch(e) {
+    // Fallback — sabit liste
+    sel.innerHTML = '<option value="">Tüm Departmanlar</option>';
+    IP_DEPARTMANLAR.forEach(d => {
+      const o = document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
+    });
+  }
 }
 
 function ipGit(sayfa) {
@@ -2973,32 +3336,114 @@ function ipRenderSayfa(sayfa) {
           <button onclick="ipYeniFaaliyet()" style="${S.btn}background:var(--ac);color:#fff;font-size:11px;padding:6px 14px;">+ Yeni</button>
         </div>
         ${liste.length===0?`<div style="padding:24px;text-align:center;color:var(--mt);font-size:11px;">Kayıt bulunamadı</div>`:
-        liste.map(f=>`
-          <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--bd);">
+        liste.map(f=>{
+          const kilitli = f.onaylandi === true;
+          const durumRenk = f.durum==='tamamlandi'?'var(--gn)':f.durum==='devam'?'var(--gold)':f.durum==='iptal'?'var(--rd)':'var(--mt)';
+          return `
+          <div onclick="ipDetayAc('${f.id}')" style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid ${kilitli?'rgba(62,207,142,.3)':'var(--bd)'};cursor:pointer;transition:border .15s;"
+            onmouseover="this.style.border='1px solid var(--ac)'" onmouseout="this.style.border='1px solid ${kilitli?'rgba(62,207,142,.3)':'var(--bd)'}'">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
               <div style="flex:1;">
-                <div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:4px;">${f.faaliyet_adi||''}</div>
-                <div style="font-size:10px;color:var(--mt2);">${f.ana_gorev||''} › ${f.alt_gorev||''}</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                  ${kilitli?`<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:rgba(62,207,142,.15);color:var(--gn);font-weight:700;">✅ ONAYLANDI</span>`:''}
+                  <div style="font-size:12px;font-weight:700;color:${kilitli?'var(--mt2)':'var(--tx)'};">${f.faaliyet_adi||''}</div>
+                </div>
+                <div style="font-size:10px;color:var(--mt2);">${f.ana_gorev||''} ${f.alt_gorev?'› '+f.alt_gorev:''}</div>
                 <div style="display:flex;gap:12px;margin-top:6px;font-size:9.5px;color:var(--mt);">
                   <span>🏢 ${f.departman||'—'}</span>
-                  <span>📅 ${f.baslangic_tarihi||'—'} → ${f.bitis_tarihi||'—'}</span>
+                  <span>📅 ${f.bitis_tarihi||'—'}</span>
                   <span>👤 ${f.sorumlu||'—'}</span>
+                  ${kilitli&&f.onaylayan?`<span style="color:var(--gn);">✓ ${f.onaylayan}</span>`:''}
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                <select onchange="ipDurumGuncelle('${f.id}',this.value)" style="font-size:9px;padding:3px 8px;border-radius:16px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx);cursor:pointer;">
-                  ${['baslayacak','devam','tamamlandi','beklemede','iptal'].map(d=>
-                    `<option value="${d}" ${f.durum===d?'selected':''}>${d==='baslayacak'?'Başlayacak':d==='devam'?'Devam Ediyor':d==='tamamlandi'?'Tamamlandı':d==='beklemede'?'Beklemede':'İptal'}</option>`
-                  ).join('')}
-                </select>
-                <div style="font-size:9px;color:var(--mt);">${f.tamamlanma_pct||0}% tamamlandı</div>
+                ${kilitli?
+                  `<span style="font-size:9px;padding:3px 10px;border-radius:16px;background:rgba(62,207,142,.12);color:var(--gn);">Tamamlandı & Onaylı</span>`:
+                  `<span style="font-size:9px;padding:3px 10px;border-radius:16px;background:${
+                    f.durum==='devam'?'rgba(240,192,96,.12)':f.durum==='tamamlandi'?'rgba(62,207,142,.12)':'rgba(255,255,255,.05)'
+                  };color:${durumRenk};">${
+                    f.durum==='baslayacak'?'Başlayacak':f.durum==='devam'?'Devam Ediyor':f.durum==='tamamlandi'?'Tamamlandı':f.durum==='beklemede'?'Beklemede':'İptal'
+                  }</span>`
+                }
+                <div style="font-size:9px;color:var(--mt);">${f.tamamlanma_pct||0}%</div>
               </div>
             </div>
             ${f.tamamlanma_pct>0?`
               <div style="background:var(--bg2);border-radius:3px;height:4px;margin-top:8px;overflow:hidden;">
-                <div style="width:${f.tamamlanma_pct}%;height:100%;background:${f.tamamlanma_pct>=100?'var(--gn)':'var(--ac)'};border-radius:3px;"></div>
+                <div style="width:${f.tamamlanma_pct}%;height:100%;background:${kilitli?'var(--gn)':f.tamamlanma_pct>=100?'var(--gn)':'var(--ac)'};border-radius:3px;"></div>
               </div>`:''}
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  else if(sayfa === 'ip-detay') {
+    const f = ipFaaliyetler.find(x=>x.id===ipDetayId);
+    if(!f) { ipGit('ip-liste'); return; }
+    const kilitli = f.onaylandi === true;
+    const dis = kilitli ? 'disabled style="opacity:.5;cursor:not-allowed;"' : '';
+    const inpStyle = kilitli
+      ? `${S.inp}background:var(--bg2);color:var(--mt2);cursor:not-allowed;`
+      : S.inp;
+
+    el.innerHTML = `
+      <div style="${S.card}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);font-size:11px;padding:5px 12px;">← Geri</button>
+          <div style="flex:1;font-size:13px;font-weight:700;color:var(--tx);">${f.faaliyet_adi||''}</div>
+          ${kilitli?`<span style="font-size:10px;padding:4px 12px;border-radius:20px;background:rgba(62,207,142,.15);color:var(--gn);font-weight:700;">✅ ONAYLANDI — ${f.onaylayan||''} — ${f.onay_tarihi?new Date(f.onay_tarihi).toLocaleDateString('tr-TR'):''}</span>`:''}
+        </div>
+
+        ${kilitli?`<div style="background:rgba(62,207,142,.06);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--gn);">
+          🔒 Bu faaliyet onaylanmış ve kilitlenmiştir. Değişiklik yapılamaz.
+        </div>`:''}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div style="grid-column:1/-1;"><label style="${S.lbl}">Faaliyet Adı</label>
+            <input id="det-adi" ${dis} style="${inpStyle}" value="${(f.faaliyet_adi||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="${S.lbl}">Departman</label>
+            <input id="det-dept" ${dis} style="${inpStyle}" value="${f.departman||''}"></div>
+          <div><label style="${S.lbl}">Ana Görev</label>
+            <input id="det-ana" ${dis} style="${inpStyle}" value="${f.ana_gorev||''}"></div>
+          <div><label style="${S.lbl}">Alt Görev</label>
+            <input id="det-alt" ${dis} style="${inpStyle}" value="${f.alt_gorev||''}"></div>
+          <div><label style="${S.lbl}">Sorumlu</label>
+            <input id="det-sorumlu" ${dis} style="${inpStyle}" value="${f.sorumlu||''}"></div>
+          <div><label style="${S.lbl}">Başlangıç</label>
+            <input id="det-bas" type="date" ${dis} style="${inpStyle}" value="${f.baslangic_tarihi||''}"></div>
+          <div><label style="${S.lbl}">Bitiş</label>
+            <input id="det-bit" type="date" ${dis} style="${inpStyle}" value="${f.bitis_tarihi||''}"></div>
+          <div><label style="${S.lbl}">Tamamlanma %</label>
+            <input id="det-pct" type="number" min="0" max="100" ${dis} style="${inpStyle}" value="${f.tamamlanma_pct||0}"></div>
+          <div><label style="${S.lbl}">Durum</label>
+            <select id="det-durum" ${dis} style="${inpStyle}padding:8px 11px;">
+              ${['baslayacak','devam','tamamlandi','beklemede','iptal'].map(d=>
+                `<option value="${d}" ${f.durum===d?'selected':''}>${d==='baslayacak'?'Başlayacak':d==='devam'?'Devam Ediyor':d==='tamamlandi'?'Tamamlandı':d==='beklemede'?'Beklemede':'İptal'}</option>`
+              ).join('')}
+            </select></div>
+          <div><label style="${S.lbl}">Öncelik</label>
+            <select id="det-oncelik" ${dis} style="${inpStyle}padding:8px 11px;">
+              <option value="yuksek" ${f.oncelik==='yuksek'?'selected':''}>Yüksek</option>
+              <option value="orta" ${f.oncelik==='orta'||!f.oncelik?'selected':''}>Orta</option>
+              <option value="dusuk" ${f.oncelik==='dusuk'?'selected':''}>Düşük</option>
+            </select></div>
+          <div style="grid-column:1/-1;"><label style="${S.lbl}">Not / Açıklama</label>
+            <textarea id="det-not" ${dis} style="${S.ta}" rows="2">${f.not_aciklama||''}</textarea></div>
+        </div>
+
+        ${!kilitli?`
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="ipDetayKaydet('${f.id}')" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
+            ${f.durum==='tamamlandi'?`
+              <button onclick="ipOnayla('${f.id}')" style="${S.btn}background:rgba(62,207,142,.2);border:1px solid rgba(62,207,142,.4);color:var(--gn);font-weight:700;">
+                ✅ Nihai Onayla & Kilitle
+              </button>`:
+              `<span style="font-size:10px;color:var(--mt);padding:8px 0;">Onaylamak için önce durumu "Tamamlandı" yapın</span>`
+            }
+            <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+          </div>`:
+          `<button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">← Listeye Dön</button>`
+        }
       </div>`;
   }
 
@@ -3178,6 +3623,61 @@ async function ipKaydet() {
     ipGit('ip-liste');
   } else {
     N('❌ Kayıt başarısız — Supabase tablosunu kontrol edin');
+  }
+}
+
+function ipDetayAc(id) {
+  ipDetayId = id;
+  ipAktifSayfa = 'ip-detay';
+  renderIPMenu();
+  ipRenderSayfa('ip-detay');
+}
+
+async function ipDetayKaydet(id) {
+  const updates = {
+    faaliyet_adi: document.getElementById('det-adi')?.value?.trim(),
+    departman:    document.getElementById('det-dept')?.value?.trim(),
+    ana_gorev:    document.getElementById('det-ana')?.value?.trim(),
+    alt_gorev:    document.getElementById('det-alt')?.value?.trim(),
+    sorumlu:      document.getElementById('det-sorumlu')?.value?.trim(),
+    baslangic_tarihi: document.getElementById('det-bas')?.value||null,
+    bitis_tarihi:     document.getElementById('det-bit')?.value||null,
+    tamamlanma_pct:   parseInt(document.getElementById('det-pct')?.value)||0,
+    durum:        document.getElementById('det-durum')?.value,
+    oncelik:      document.getElementById('det-oncelik')?.value,
+    not_aciklama: document.getElementById('det-not')?.value||null,
+    guncelleme_tarihi: new Date().toISOString()
+  };
+  const sonuc = await dbUpdate('is_plani', id, updates);
+  if(sonuc) {
+    N('✅ Faaliyet güncellendi');
+    await ipYukle();
+    ipDetayAc(id);
+  } else {
+    N('❌ Güncelleme başarısız');
+  }
+}
+
+async function ipOnayla(id) {
+  const onaylayan = prompt('Onaylayan kişi adı (GM veya yetkili):');
+  if(!onaylayan) return;
+  const konfirm = confirm(`"${onaylayan}" adına nihai onay verilecek. Onaylandıktan sonra bu faaliyet değiştirilemez. Devam edilsin mi?`);
+  if(!konfirm) return;
+  const updates = {
+    onaylandi: true,
+    onaylayan: onaylayan,
+    onay_tarihi: new Date().toISOString(),
+    durum: 'tamamlandi',
+    tamamlanma_pct: 100,
+    guncelleme_tarihi: new Date().toISOString()
+  };
+  const sonuc = await dbUpdate('is_plani', id, updates);
+  if(sonuc) {
+    N(`✅ Faaliyet onaylandı & kilitlendi — ${onaylayan}`);
+    await ipYukle();
+    ipDetayAc(id);
+  } else {
+    N('❌ Onay işlemi başarısız');
   }
 }
 
