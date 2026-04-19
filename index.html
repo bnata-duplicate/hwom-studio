@@ -2613,7 +2613,7 @@ function renderQOSSayfa(sayfa) {
           <div><label style="${S.lbl}">Not (opsiyonel)</label><input id="iso-f-not" style="${S.inp}" placeholder="Açıklama..."></div>
         </div>
         <button onclick="isoKaydet()" style="${S.btn}">Kaydet</button>
-        <button onclick="document.getElementById('iso-yeni-form').style.display='none'" style="${S.btnSecondary||S.btn}margin-left:8px;background:var(--bg3);color:var(--mt);">İptal</button>
+        <button onclick="document.getElementById('iso-yeni-form').style.display='none'" style="${S.btnSecondary||S.btn}margin-left:8px;background:var(--bg3);color:var(--mt);">Çıkış</button>
       </div>
       <div style="margin-top:10px;">
         <button onclick="document.getElementById('iso-yeni-form').style.display='block'" style="${S.btn}">+ Madde Ekle</button>
@@ -2808,7 +2808,7 @@ function qosYeniDenetimFormu() {
       </div>
       <div style="display:flex;gap:8px;">
         <button onclick="qosDenetimKaydet()" style="${S.btn}background:var(--ac);color:#fff;">💾 Kaydet</button>
-        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">İptal</button>
+        <button onclick="qosGit('denetim')" style="${S.btn}background:var(--bg3);border:1px solid var(--b2);color:var(--mt2);">Çıkış</button>
       </div>
     </div>`;
   if(document.getElementById('qos-denetim-form')) {
@@ -2891,7 +2891,7 @@ function qosBulguEkleFormu(denetimId, denetimTip, denetimTarih) {
       </div>
       <div style="display:flex;gap:8px;">
         <button onclick="qosBulguKaydet('${denetimId}')" style="${S.btn}background:var(--rd);color:#fff;">Bulgu Kaydet</button>
-        <button onclick="document.getElementById('qos-bulgu-form').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+        <button onclick="document.getElementById('qos-bulgu-form').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">Çıkış</button>
       </div>
     </div>`;
 }
@@ -2967,7 +2967,7 @@ async function qosCapaEkle(bulguId) {
       </div>
       <div style="display:flex;gap:8px;">
         <button onclick="qosCapaKaydet('${bulguId}')" style="${S.btn}background:var(--ac);color:#fff;">CAPA Kaydet</button>
-        <button onclick="document.getElementById('capa-form-${bulguId}').remove()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+        <button onclick="document.getElementById('capa-form-${bulguId}').remove()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">Çıkış</button>
       </div>
     </div>`;
   el.appendChild(formDiv);
@@ -3613,7 +3613,7 @@ function ipRenderSayfa(sayfa) {
               </button>`:
               `<span style="font-size:10px;color:var(--mt);padding:8px 0;">Onaylamak için önce durumu "Tamamlandı" yapın</span>`
             }
-            <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+            <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">Çıkış</button>
           </div>`:
           `<button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">← Listeye Dön</button>`
         }
@@ -3765,7 +3765,7 @@ function ipYeniFaaliyet() {
           <textarea id="ip-f-not" style="${S.ta}" rows="2" placeholder="Opsiyonel..."></textarea></div>
       </div>
       <button onclick="ipKaydet()" style="${S.btn}background:var(--ac);color:#fff;">Kaydet</button>
-      <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">İptal</button>
+      <button onclick="ipGit('ip-liste')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">Çıkış</button>
     </div>`;
 }
 
@@ -4221,7 +4221,7 @@ function kpiGercekGirisFormu() {
           <textarea id="kpi-g-not" style="${S.ta}" rows="2" placeholder="Opsiyonel..."></textarea></div>
       </div>
       <button onclick="kpiGercekKaydet()" style="${S.btn}background:var(--ac);color:#fff;">Kaydet</button>
-      <button onclick="kpiGit('kpi-dashboard')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">İptal</button>
+      <button onclick="kpiGit('kpi-dashboard')" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-left:8px;">Çıkış</button>
     </div>`;
 }
 
