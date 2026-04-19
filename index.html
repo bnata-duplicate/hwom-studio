@@ -2520,25 +2520,33 @@ function renderQOSSayfa(sayfa) {
         </div>
         ${qosDenetimler.length === 0 ?
           `<div style="padding:32px;text-align:center;color:var(--mt);">Henüz denetim yok — ilk denetimi ekleyin</div>` :
-          `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+          `<div style="font-size:9.5px;color:var(--mt);margin-bottom:8px;">Denetim satırına tıkla → Bulgu ekle</div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
             <tr style="border-bottom:1px solid var(--bd);">
               <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tip</th>
               <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Tarih</th>
               <th style="padding:8px;text-align:left;color:var(--mt);font-weight:500;">Denetçi</th>
               <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Skor</th>
               <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">Durum</th>
+              <th style="padding:8px;text-align:center;color:var(--mt);font-weight:500;">İşlem</th>
             </tr>
             ${qosDenetimler.map(d=>`
-              <tr style="border-bottom:1px solid var(--bd);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+              <tr style="border-bottom:1px solid var(--bd);cursor:pointer;" 
+                onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
                 <td style="padding:8px;font-weight:600;">${d.tip}</td>
                 <td style="padding:8px;color:var(--mt2);">${d.tarih}</td>
                 <td style="padding:8px;color:var(--mt2);">${d.denetci||'-'}</td>
                 <td style="padding:8px;text-align:center;font-weight:700;color:${d.toplam_skor>=80?'var(--gn)':d.toplam_skor>=60?'var(--gold)':'var(--rd)'};">${d.toplam_skor||'-'}</td>
                 <td style="padding:8px;text-align:center;"><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(62,207,142,.15);color:var(--gn);">${d.sonuc_durumu||'-'}</span></td>
+                <td style="padding:8px;text-align:center;">
+                  <button onclick="qosBulguEkleFormu('${d.id}','${(d.tip||'').replace(/'/g,"\\'")}','${(d.tarih||'').replace(/'/g,"\\'")}'); event.stopPropagation();" 
+                    style="${S.btn}background:rgba(242,107,107,.12);border:1px solid rgba(242,107,107,.3);color:var(--rd);font-size:9px;padding:3px 8px;">+ Bulgu</button>
+                </td>
               </tr>`).join('')}
           </table>`
         }
       </div>
+      <div id="qos-bulgu-form"></div>
       <div id="qos-denetim-form"></div>`;
   }
 
@@ -2832,24 +2840,168 @@ async function qosDenetimKaydet() {
   }
 }
 
-async function qosCapaEkle(bulguId) {
-  const aksiyon = prompt('CAPA aksiyonu girin:');
-  if(!aksiyon) return;
-  const sorumlu = prompt('Sorumlu kişi:');
+// ── BL-001: BULGU EKLEMEormu ────────────────────────
+function qosBulguEkleFormu(denetimId, denetimTip, denetimTarih) {
+  const el = document.getElementById('qos-bulgu-form');
+  if(!el) return;
+  // Scroll to form
+  el.scrollIntoView({behavior:'smooth', block:'start'});
+  el.innerHTML = `
+    <div style="${S.card}border:1px solid rgba(242,107,107,.3);margin-top:12px;">
+      <div style="${S.cardTitle}color:var(--rd);">⚠ Yeni Bulgu — ${denetimTip} · ${denetimTarih}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Bulgu Başlığı *</label>
+          <input id="bl-baslik" style="${S.inp}" placeholder="Bulgu başlığını girin..."></div>
+        <div><label style="${S.lbl}">Öncelik *</label>
+          <select id="bl-oncelik" style="${S.inp}padding:8px 11px;">
+            <option value="kritik">Kritik</option>
+            <option value="yuksek">Yüksek</option>
+            <option value="orta" selected>Orta</option>
+            <option value="dusuk">Düşük</option>
+          </select></div>
+        <div><label style="${S.lbl}">Kategori</label>
+          <select id="bl-kategori" style="${S.inp}padding:8px 11px;">
+            <option value="hizmet">Hizmet Kalitesi</option>
+            <option value="hijyen">Hijyen / Gıda Güvenliği</option>
+            <option value="teknik">Teknik / Altyapı</option>
+            <option value="prosedur">Prosedür Uyumsuzluğu</option>
+            <option value="personel">Personel / Eğitim</option>
+            <option value="musteri">Müşteri Şikayeti</option>
+            <option value="diger">Diğer</option>
+          </select></div>
+        <div><label style="${S.lbl}">ISO Madde</label>
+          <select id="bl-iso" style="${S.inp}padding:8px 11px;">
+            <option value="">—</option>
+            <option value="Md.4.1">Md.4.1 — Kuruluş bağlamı</option>
+            <option value="Md.6.1">Md.6.1 — Risk ve fırsat</option>
+            <option value="Md.7.2">Md.7.2 — Yeterlilik</option>
+            <option value="Md.8.1">Md.8.1 — Operasyonel planlama</option>
+            <option value="Md.8.5">Md.8.5 — Hizmet sunumu</option>
+            <option value="Md.9.1">Md.9.1 — İzleme ve ölçüm</option>
+            <option value="Md.10.2">Md.10.2 — Uygunsuzluk & düzeltici faaliyet</option>
+          </select></div>
+        <div><label style="${S.lbl}">Etkilenen Departman</label>
+          <input id="bl-dept" style="${S.inp}" placeholder="Departman adı..."></div>
+        <div><label style="${S.lbl}">Tespit Tarihi</label>
+          <input id="bl-tarih" type="date" style="${S.inp}" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Bulgu Açıklaması</label>
+          <textarea id="bl-aciklama" style="${S.ta}" rows="3" placeholder="Bulguyu detaylı açıklayın..."></textarea></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Örneklendirme / Kanıt</label>
+          <textarea id="bl-ornek" style="${S.ta}" rows="2" placeholder="Gözlem, fotoğraf referansı, doküman no..."></textarea></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="qosBulguKaydet('${denetimId}')" style="${S.btn}background:var(--rd);color:#fff;">Bulgu Kaydet</button>
+        <button onclick="document.getElementById('qos-bulgu-form').innerHTML=''" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+      </div>
+    </div>`;
+}
+
+async function qosBulguKaydet(denetimId) {
+  const baslik = document.getElementById('bl-baslik')?.value?.trim();
+  if(!baslik) { N('Bulgu başlığı zorunlu'); return; }
   const yeni = {
-    bulgu_id:    bulguId,
-    tip:         'duzeltici',
-    aksiyon:     aksiyon,
-    sorumlu_ad:  sorumlu||null,
-    durum:       'acik',
+    denetim_id: denetimId,
+    baslik,
+    oncelik: document.getElementById('bl-oncelik')?.value || 'orta',
+    kategori: document.getElementById('bl-kategori')?.value || null,
+    iso_madde: document.getElementById('bl-iso')?.value || null,
+    departman: document.getElementById('bl-dept')?.value?.trim() || null,
+    tespit_tarihi: document.getElementById('bl-tarih')?.value || null,
+    aciklama: document.getElementById('bl-aciklama')?.value?.trim() || null,
+    orneklendirme: document.getElementById('bl-ornek')?.value?.trim() || null,
+    durum: 'acik',
+    olusturma_tarihi: new Date().toISOString()
   };
-  const kayit = await dbInsert('capa', yeni);
-  if(kayit){
-    N('✓ CAPA Supabase\'e kaydedildi');
+  const kayit = await dbInsert('bulgu', yeni);
+  if(kayit) {
+    N('✅ Bulgu kaydedildi');
+    document.getElementById('qos-bulgu-form').innerHTML = '';
     await yukleDenetimler();
-    qosGit('capa');
+    qosGit('bulgu');
+  } else {
+    N('❌ Kayıt başarısız');
   }
 }
+
+// ── BL-002: CAPA FORM ────────────────────────────────
+async function qosCapaEkle(bulguId) {
+  const el = document.getElementById('qos-main');
+  if(!el) return;
+
+  // Bulgu bilgisini bul
+  const bulgu = qosBulgular.find(b=>b.id===bulguId);
+  const bulguBaslik = bulgu?.baslik || 'Bulgu';
+
+  // Mevcut içeriğin altına form ekle
+  const formDiv = document.createElement('div');
+  formDiv.id = 'capa-form-'+bulguId;
+  formDiv.style.cssText = 'margin-top:12px;';
+  formDiv.innerHTML = `
+    <div style="${S.card}border:1px solid rgba(124,106,247,.3);">
+      <div style="${S.cardTitle}color:var(--ac2);">🔧 CAPA Oluştur — ${bulguBaslik}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Düzeltici Aksiyon *</label>
+          <textarea id="capa-aksiyon-${bulguId}" style="${S.ta}" rows="3" placeholder="Yapılacak düzeltici faaliyeti açıklayın..."></textarea></div>
+        <div><label style="${S.lbl}">Sorumlu Kişi / Unvan *</label>
+          <input id="capa-sorumlu-${bulguId}" style="${S.inp}" placeholder="Departman müdürü, uzman..."></div>
+        <div><label style="${S.lbl}">Hedef Tarih</label>
+          <input id="capa-tarih-${bulguId}" type="date" style="${S.inp}" 
+            value="${new Date(Date.now()+14*24*60*60*1000).toISOString().split('T')[0]}"></div>
+        <div><label style="${S.lbl}">CAPA Tipi</label>
+          <select id="capa-tip-${bulguId}" style="${S.inp}padding:8px 11px;">
+            <option value="duzeltici">Düzeltici Faaliyet</option>
+            <option value="onleyici">Önleyici Faaliyet</option>
+            <option value="iyilestirici">İyileştirici Faaliyet</option>
+          </select></div>
+        <div><label style="${S.lbl}">Öncelik</label>
+          <select id="capa-oncelik-${bulguId}" style="${S.inp}padding:8px 11px;">
+            <option value="acil">Acil (1-3 gün)</option>
+            <option value="yuksek" selected>Yüksek (1 hafta)</option>
+            <option value="orta">Orta (2 hafta)</option>
+            <option value="dusuk">Düşük (1 ay)</option>
+          </select></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Kök Neden Analizi</label>
+          <textarea id="capa-kok-${bulguId}" style="${S.ta}" rows="2" placeholder="Sorunun kök nedeni nedir?"></textarea></div>
+        <div style="grid-column:1/-1;"><label style="${S.lbl}">Etkilenen Departmanlar (çoklu)</label>
+          <input id="capa-deptler-${bulguId}" style="${S.inp}" placeholder="F&B, Kat Hizmetleri, Teknik..."></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="qosCapaKaydet('${bulguId}')" style="${S.btn}background:var(--ac);color:#fff;">CAPA Kaydet</button>
+        <button onclick="document.getElementById('capa-form-${bulguId}').remove()" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">İptal</button>
+      </div>
+    </div>`;
+  el.appendChild(formDiv);
+  formDiv.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function qosCapaKaydet(bulguId) {
+  const aksiyon = document.getElementById(`capa-aksiyon-${bulguId}`)?.value?.trim();
+  const sorumlu = document.getElementById(`capa-sorumlu-${bulguId}`)?.value?.trim();
+  if(!aksiyon || !sorumlu) { N('Aksiyon ve sorumlu zorunlu'); return; }
+  const deptler = document.getElementById(`capa-deptler-${bulguId}`)?.value?.trim();
+  const yeni = {
+    bulgu_id: bulguId,
+    tip: document.getElementById(`capa-tip-${bulguId}`)?.value || 'duzeltici',
+    aksiyon,
+    sorumlu_ad: sorumlu,
+    hedef_tarih: document.getElementById(`capa-tarih-${bulguId}`)?.value || null,
+    oncelik: document.getElementById(`capa-oncelik-${bulguId}`)?.value || 'yuksek',
+    kok_neden: document.getElementById(`capa-kok-${bulguId}`)?.value?.trim() || null,
+    etkilenen_departmanlar: deptler || null,
+    durum: 'acik',
+    olusturma_tarihi: new Date().toISOString()
+  };
+  const kayit = await dbInsert('capa', yeni);
+  if(kayit) {
+    N('✅ CAPA kaydedildi');
+    document.getElementById(`capa-form-${bulguId}`)?.remove();
+    await yukleDenetimler();
+    qosGit('capa');
+  } else {
+    N('❌ CAPA kaydı başarısız');
+  }
+}
+// ─────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════
 // M13 — ATLAS SIA: Strategic Intelligence & Alignment
@@ -2867,6 +3019,24 @@ const ATLAS_MENU = [
 
 let atlasAktifSayfa = 'atlas-overview';
 let atlasVeri = null;
+// ── MARKDOWN RENDER ──────────────────────────────────
+function mdRender(text) {
+  if(!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^#{3}\s(.+)$/gm,'<div style="font-size:11px;font-weight:700;color:var(--ac2);margin:12px 0 4px;">$1</div>')
+    .replace(/^#{2}\s(.+)$/gm,'<div style="font-size:12px;font-weight:700;color:var(--tx);margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--bd);">$1</div>')
+    .replace(/^#{1}\s(.+)$/gm,'<div style="font-size:13px;font-weight:800;color:var(--ac);margin:20px 0 8px;">$1</div>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--tx);">$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em style="color:var(--mt2);">$1</em>')
+    .replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--bd);margin:12px 0;">')
+    .replace(/^[-•]\s(.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;font-size:11px;"><span style="color:var(--ac);flex-shrink:0;">›</span><span>$1</span></div>')
+    .replace(/^\d+\.\s(.+)$/gm,'<div style="display:flex;gap:8px;margin:3px 0;font-size:11px;"><span style="color:var(--ac2);flex-shrink:0;font-weight:700;">·</span><span>$1</span></div>')
+    .replace(/\n{2,}/g,'<div style="height:8px;"></div>')
+    .replace(/\n/g,'<br>');
+}
+// ─────────────────────────────────────────────────────
+
 let atlasRaporMetni = '';
 
 async function initATLAS() {
@@ -3094,7 +3264,7 @@ function atlasRenderSayfa(sayfa) {
     el.innerHTML=`<div style="${S.card}">
       <div style="${S.cardTitle}">◎ ATLAS AI Analiz Raporu</div>
       ${atlasRaporMetni?`
-        <div style="font-size:11px;color:var(--tx);line-height:1.8;white-space:pre-wrap;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);">${atlasRaporMetni}</div>
+        <div style="font-size:11px;color:var(--tx);line-height:1.8;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);">${mdRender(atlasRaporMetni)}</div>
         <div style="margin-top:12px;display:flex;gap:8px;">
           <button onclick="navigator.clipboard.writeText(atlasRaporMetni).then(()=>N('Kopyalandı ✓'))" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);">📋 Kopyala</button>
           <button onclick="atlasAnalizBaslat()" style="${S.btn}background:var(--ac);color:#fff;">↺ Yenile</button></div>`:
@@ -3111,7 +3281,7 @@ async function atlasAnalizBaslat() {
   el.innerHTML=`<div style="${S.card}"><div style="${S.cardTitle}">◎ ATLAS AI Analiz — Çalışıyor</div>
     <div style="padding:20px;text-align:center;">
       <div style="font-size:12px;color:var(--ac2);margin-bottom:8px;">BSC × OKR × X-Layer analizi yapılıyor...</div>
-      <div id="atlas-stream" style="margin-top:12px;font-size:11px;color:var(--tx);line-height:1.8;text-align:left;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);min-height:80px;white-space:pre-wrap;"></div>
+      <div id="atlas-stream" style="margin-top:12px;font-size:11px;color:var(--tx);line-height:1.8;text-align:left;background:var(--bg3);border-radius:8px;padding:14px;border:1px solid var(--bd);min-height:80px;"></div>
     </div></div>`;
 
   const v=atlasVeri;
@@ -3152,7 +3322,7 @@ Türkçe, pratik, madde madde.`;
     const data=await response.json();
     const metin=data.content?.[0]?.text||'Yanıt alınamadı.';
     atlasRaporMetni=metin;
-    if(streamEl) streamEl.textContent=metin;
+    if(streamEl) streamEl.innerHTML=mdRender(metin);
     const kart=el.querySelector('div');
     if(kart){
       const btnDiv=document.createElement('div');
@@ -3255,10 +3425,13 @@ function ipRenderSayfa(sayfa) {
     }).length;
     const tamamPct = toplam ? Math.round(tamamlanan/toplam*100) : 0;
 
-    // Departman dağılımı
+    // Departman dağılımı — sayısal key'leri filtrele
     const deptSayim = {};
     ipFaaliyetler.forEach(f => {
-      if(f.departman) deptSayim[f.departman] = (deptSayim[f.departman]||0)+1;
+      const dept = f.departman;
+      if(dept && isNaN(dept) && String(dept).trim().length > 1) {
+        deptSayim[dept] = (deptSayim[dept]||0)+1;
+      }
     });
     const deptSirali = Object.entries(deptSayim).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
@@ -3723,14 +3896,32 @@ async function ipExcelOku(event) {
     const dataRows = rows.slice(startRow).filter(r => r[4] && String(r[4]).trim());
     let sayac = 0;
     for(const row of dataRows.slice(0,500)) {
+      // Excel kolonları: # | Departman | Ana Görev | Alt Görev | Görev Adı | Süre | Başlangıç | Bitiş | Sorumlu | Durum | Öncelik
+      // row[0]=# (numara), row[1]=Departman, row[2]=Ana Görev, row[3]=Alt Görev, row[4]=Görev Adı
+      // Eğer row[1] sayısal ise eski format (row[0]=Departman)
+      const ilkKolon = String(row[0]||'').trim();
+      const isSayisal = !isNaN(ilkKolon) && ilkKolon !== '';
+      const deptIdx  = isSayisal ? 1 : 0;
+      const anaIdx   = isSayisal ? 2 : 1;
+      const altIdx   = isSayisal ? 3 : 2;
+      const gorevIdx = isSayisal ? 4 : 4;
+      const sureIdx  = isSayisal ? 5 : 5;
+      const sorumluIdx = isSayisal ? 8 : 8;
+
+      const dept = String(row[deptIdx]||'').trim();
+      const gorev = String(row[gorevIdx]||'').trim();
+      if(!gorev || !dept) continue;
+      // Departman başlık satırlarını atla (dept === gorev veya dept çok uzunsa)
+      if(dept === gorev || dept.length > 60) continue;
+
       const yeni = {
         isletme_id: AKTIF_ISLETME?.id,
-        departman: String(row[0]||'').trim() || null,
-        ana_gorev: String(row[1]||'').trim() || null,
-        alt_gorev: String(row[2]||'').trim() || null,
-        faaliyet_adi: String(row[4]||'').trim() || null,
-        sure_gun: parseInt(row[5])||null,
-        sorumlu: String(row[8]||'').trim() || null,
+        departman: dept || null,
+        ana_gorev: String(row[anaIdx]||'').trim() || null,
+        alt_gorev: String(row[altIdx]||'').trim() || null,
+        faaliyet_adi: gorev || null,
+        sure_gun: parseInt(row[sureIdx])||null,
+        sorumlu: String(row[sorumluIdx]||'').trim() || null,
         durum: 'baslayacak',
         tamamlanma_pct: 0,
         oncelik: 'orta',
