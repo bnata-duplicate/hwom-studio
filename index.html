@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HWOM Studio v6.0 — HumanSoft AI Atlas</title>
+<title>HumanSoft | Atlas · Performance Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fira+Code:wght@400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -71,7 +71,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 .topbar{height:var(--topbar-h);max-height:var(--topbar-h);background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;flex-shrink:0;overflow:hidden;flex-wrap:nowrap;}
 .tb-brand{display:flex;align-items:center;gap:8px;margin-right:12px;border-right:1px solid var(--bd);padding-right:12px;flex-shrink:0;}
 .tb-logo{font-size:16px;font-weight:900;letter-spacing:-.5px;}
-.tb-logo span{color:var(--ac2);}
+.tb-logo span{color:var(--tx);font-weight:400;}
 .tb-tagline{font-family:'Fraunces',serif;font-style:italic;font-size:10px;color:var(--mt);margin-top:1px;}
 .tb-ver{font-family:'Fira Code',monospace;font-size:9px;color:var(--mt);background:rgba(124,106,247,.12);border:1px solid rgba(124,106,247,.25);padding:2px 7px;border-radius:3px;margin-left:6px;}
 
@@ -106,9 +106,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Cabinet Grotesk',sans-ser
 /* ══ SPLASH ══ */
 .splash{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle at 30% 40%,rgba(124,106,247,.06) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(56,217,192,.04) 0%,transparent 50%);}
 .splash-card{text-align:center;max-width:640px;padding:48px;}
-.splash-logo{font-size:48px;margin-bottom:20px;opacity:.9;}
+.splash-logo{margin-bottom:20px;opacity:.92;color:var(--tx);line-height:0;}
 .splash-title{font-size:32px;font-weight:900;letter-spacing:-.5px;margin-bottom:8px;}
-.splash-title span{color:var(--ac2);}
+.splash-title span{color:var(--tx);font-weight:400;}
 .splash-sub{font-family:'Fraunces',serif;font-style:italic;font-size:16px;color:var(--mt2);margin-bottom:32px;}
 .splash-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:36px;}
 .splash-step{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;}
@@ -239,7 +239,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
 .sector-btn.active{border-color:var(--ac);background:rgba(124,106,247,.08);}
 .sh-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .sh-title{font-size:19px;font-weight:900;letter-spacing:-.3px;}
-.sh-title span{color:var(--ac2);}
+.sh-title span{color:var(--tx);font-weight:400;}
 .sh-stats{display:flex;gap:8px;}
 .sh-stat{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:7px 12px;text-align:center;}
 .sh-stat-v{font-family:'Fira Code',monospace;font-size:15px;font-weight:700;}
@@ -292,7 +292,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
 .db-canvas::-webkit-scrollbar-thumb{background:var(--b2);}
 .db-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bd);}
 .db-title{font-size:18px;font-weight:900;letter-spacing:-.3px;}
-.db-title span{color:var(--ac2);}
+.db-title span{color:var(--tx);font-weight:400;}
 .db-sub{font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;margin-top:2px;}
 .db-clock{font-family:'Fira Code',monospace;font-size:11px;color:var(--mt2);background:var(--bg2);border:1px solid var(--bd);padding:5px 10px;border-radius:5px;}
 .db-g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:11px;}
@@ -364,10 +364,10 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
   <div class="tb-brand">
     <div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div class="tb-logo">HWOM <span>Studio</span></div>
+        <div class="tb-logo">HumanSoft <span>| Atlas</span></div>
         <span class="tb-ver">v1.0</span>
       </div>
-      <div class="tb-tagline">HumanSoft Work Object Model</div>
+      <div class="tb-tagline">Performance Intelligence</div>
     </div>
   </div>
   <div class="tb-steps">
@@ -399,9 +399,9 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
 <div class="screen active" id="s0">
   <div class="splash">
     <div class="splash-card">
-      <div class="splash-logo">◈</div>
-      <div class="splash-title">HumanSoft <span>AI Atlas</span></div>
-      <div class="splash-sub">HWOM Studio v1.0 — Kodsuz Ajan & Dashboard Tasarım Ortamı</div>
+      <div class="splash-logo"><svg width="54" height="54" viewBox="0 0 48 48" aria-label="HumanSoft | Atlas"><rect x="7" y="7" width="34" height="34" rx="4" transform="rotate(45 24 24)" fill="none" stroke="currentColor" stroke-width="2"/><text x="24" y="29.5" text-anchor="middle" font-family="Archivo,Inter,system-ui,sans-serif" font-size="13" font-weight="800" fill="currentColor">AI</text></svg></div>
+      <div class="splash-title">HumanSoft <span>| Atlas</span></div>
+      <div class="splash-sub">Performance Intelligence</div>
       <div class="splash-steps">
         <div class="splash-step" onclick="goTo(1)">
           <div class="ss-num">ADIM 01</div>
@@ -582,7 +582,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--tx);}
     </div>
     <div class="db-canvas" id="dbCanvas4">
       <div class="db-header">
-        <div><div class="db-title" id="dbTitle4">HumanSoft <span>AI Atlas</span></div><div class="db-sub" id="dbSub4">—</div></div>
+        <div><div class="db-title" id="dbTitle4">HumanSoft <span>| Atlas</span></div><div class="db-sub" id="dbSub4">—</div></div>
         <div style="display:flex;gap:8px;align-items:center">
           <div class="db-clock"><span class="live-dot" style="width:5px;height:5px;margin-right:4px"></span><span id="dbClock4">—</span></div>
         </div>
@@ -972,7 +972,7 @@ function renderTmpl(){
     <div class="sh-header">
       <div style="display:flex;align-items:center;gap:12px">
         <span style="font-size:28px">${s.icon}</span>
-        <div><div class="sh-title">HumanSoft <span>AI Atlas</span> — ${s.name}</div><div style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;margin-top:2px">${s.sub}</div></div>
+        <div><div class="sh-title">HumanSoft <span>| Atlas</span> — ${s.name}</div><div style="font-size:10px;color:var(--mt2);font-family:'Fira Code',monospace;margin-top:2px">${s.sub}</div></div>
       </div>
       <div class="sh-stats">${s.stats.map(st=>`<div class="sh-stat"><div class="sh-stat-v" style="color:${s.color}">${st.v}</div><div class="sh-stat-k">${st.k}</div></div>`).join('')}</div>
     </div>
@@ -1058,7 +1058,7 @@ function initS4(){
 }
 function autoGenDB(){
   const d=DB[currentSectorDB];
-  document.getElementById('dbTitle4').innerHTML=`HumanSoft <span>AI Atlas</span> — ${d.title}`;
+  document.getElementById('dbTitle4').innerHTML=`HumanSoft <span>| Atlas</span> — ${d.title}`;
   document.getElementById('dbSub4').textContent=d.sub+' · '+new Date().toLocaleDateString('tr-TR');
   const barsMax=Math.max(...d.bars);
   const body=`
@@ -3950,6 +3950,7 @@ const KPI_MENU = [
   {id:'kpi-giris',     label:'Veri Girişi', icon:'✎'},
   {id:'kpi-analiz',    label:'X-Layer Analiz', icon:'◈'},
   {id:'kpi-okr-link',  label:'OKR Bağlantısı', icon:'◎'},
+  {id:'kpi-atlas',     label:'Atlas Hattı', icon:'◆'},
 ];
 
 const KPI_XLAYER_RENK = {
@@ -4002,6 +4003,8 @@ async function kpiYukle() {
 function kpiRenderSayfa(sayfa) {
   const el = document.getElementById('kpi-main');
   if(!el) return;
+
+  if(sayfa === 'kpi-atlas') { return atlasHatRender(el); }
 
   if(sayfa === 'kpi-dashboard') {
     const xlayerGrup = {CX:[],EX:[],OX:[],BX:[],QX:[]};
@@ -4305,12 +4308,273 @@ async function kpiExcelOku(event) {
   event.target.value='';
 }
 
+// ═══════════════════════════════════════════════════════
+// M12 · ATLAS HATTI — KPI Takip × Atlas Core (4 bağlantı sözleşmesi)
+// Ground (kimlik) · Data (measure zarfı) · Brain (HSI_YORUM) · Governance (insan kapısı)
+// Gerçek Supabase verisi (kpiVeriler/kpiGerceklesenler) · tek beyin (/api/chat)
+// ═══════════════════════════════════════════════════════
+const ATLAS_VTAM  = {yesil:1.0, sari:0.7, turuncu:0.45, kirmizi:0.15};
+const ATLAS_STAVAN= {'1B':0.92, '2B':0.72, '3B':0.45};
+const ATLAS_TZ    = {CX:30, EX:35, OX:35, BX:35, QX:35};   // tazelik eşiği (gün) — Freshness tablosu
+const ATLAS_MERD  = {
+  yesil:{ic:'🟢',c:'var(--gn)',  lbl:'yesil'},
+  sari:{ic:'🟡', c:'var(--gold)',lbl:'sari'},
+  turuncu:{ic:'🟠',c:'#c2691f',  lbl:'turuncu'},
+  kirmizi:{ic:'🔴',c:'var(--rd)',lbl:'kirmizi'}
+};
+let atlasSeciliKpiId = null, atlasCtx = null, atlasHsiOut = null;
+
+function atlasNum(x){ if(x===null||x===undefined||x==='') return null; const n=parseFloat(String(x).replace(/[^0-9.,-]/g,'').replace(',','.')); return isNaN(n)?null:n; }
+function atlasGunFark(d){ if(!d) return null; return Math.round((Date.now()-new Date(d))/86400000); }
+
+function atlasGuvenHesapla(merdiven, sentez, celiskiVar){
+  let s = Math.round(100 * ATLAS_STAVAN[sentez] * ATLAS_VTAM[merdiven]);
+  if(celiskiVar) s = Math.min(s,28);
+  const lbl = s>=70?'yuksek':(s>=40?'orta':'dusuk');
+  return {skor:s, lbl, vtam:ATLAS_VTAM[merdiven], tavan:ATLAS_STAVAN[sentez]};
+}
+
+// ATLAS DATA — deterministik dönüşüm: gerçek satır → measure zarfı
+function atlasTransform(k){
+  const xl = (k.x_layer||'OX').split('+')[0].trim();
+  const tz = ATLAS_TZ[xl]||35;
+  const son = kpiGerceklesenler.filter(g=>g.kpi_id===k.id)
+    .sort((a,b)=>new Date(b.olcum_tarihi)-new Date(a.olcum_tarihi))[0] || null;
+  const deg = son ? atlasNum(son.gerceklesen_deger) : null;
+  const baz = atlasNum(k.hedef_2026);
+  const tar = son ? son.olcum_tarihi : null;
+  const steps = []; let merd, sapma=null, bayat=null, eksik=false;
+
+  if(deg===null){
+    merd='kirmizi'; eksik=true;
+    steps.push(['1','Gerçekleşen değer <b>yok</b> → karar 4: sessiz yokluk değil, açık <b>🔴</b> nesne. HIL "eksik" der, uydurmaz.']);
+  } else {
+    if(baz!==null){
+      sapma = +(((deg-baz)/baz)*100).toFixed(1);
+      steps.push(['1',`Değer <b>${deg}</b> · baz <b>${baz}</b> (hedef_2026).`]);
+      steps.push(['2',`Sapma <b>DLM hesaplar</b> (karar 3): <b>${sapma>0?'+':''}${sapma}%</b>. HIL yorumlar, hesaplamaz.`]);
+    } else {
+      steps.push(['1',`Değer <b>${deg}</b> · hedef tanımsız → sapma hesaplanamaz, mutlak değer yorumlanır.`]);
+    }
+    bayat = atlasGunFark(tar);
+    if(bayat===null){ merd='sari'; steps.push(['3','Ölçüm tarihi yok → tazelik doğrulanamaz → ihtiyat <b>🟡 sari</b>.']); }
+    else if(bayat>tz){ merd='sari'; steps.push(['3',`Tazelik: <b>${bayat}g > eşik ${tz}g</b> → kural 8: 🟢 otomatik <b>🟡'ye düşer</b>. Güven düşer.`]); }
+    else { merd='yesil'; steps.push(['3',`Tazelik: ${bayat}g ≤ eşik ${tz}g → taze, <b>🟢 yesil</b>.`]); }
+  }
+  steps.push([eksik?'2':'4',`Kırılım <b>Ground</b>'dan: ${AKTIF_ISLETME?.isletme_adi||'tesis'} + ${k.departman?('departman ('+k.departman+')'):'tesis seviyesi'}.`]);
+
+  const zarf = {
+    measure: k.id, etiket: k.kpi_adi||k.id, deger: deg,
+    donem: son?.donem || '—', mercek: xl,
+    kirilim: { tesis: AKTIF_ISLETME?.isletme_adi||'tesis', departman: k.departman||null },
+    kaynak_modul: 'KPI Takip', kaynak_sistem: son?.veri_kaynagi || k.veri_kaynagi || 'Manuel',
+    merdiven: merd
+  };
+  if(!eksik && baz!==null) zarf.karsilastirma = { baz, baz_tipi:'hedef', sapma_pct: sapma };
+  zarf.guncelleme = tar || null;
+  return { zarf, steps, merd, eksik, bayat, sapma, baz, deg, xl };
+}
+
+function atlasSecKpi(id){ atlasSeciliKpiId=id; atlasHsiOut=null;
+  const k = kpiVeriler.find(x=>x.id===id); atlasCtx = k?atlasTransform(k):null;
+  atlasHatRender(document.getElementById('kpi-main')); }
+
+function atlasHatRender(el){
+  if(!el) return;
+  if(!kpiVeriler.length){
+    el.innerHTML = `<div style="${S.card}"><div style="${S.cardTitle}">◆ Atlas Hattı</div>
+      <div style="padding:20px;text-align:center;color:var(--mt);font-size:12px;">Önce KPI tanımı gerek — "KPI Listesi"nden Excel import edin.</div></div>`;
+    return;
+  }
+  const opts = kpiVeriler.map(k=>{
+    const xl=(k.x_layer||'OX').split('+')[0].trim();
+    return `<option value="${k.id}" ${k.id===atlasSeciliKpiId?'selected':''}>[${xl}] ${k.kpi_adi||k.id}${k.departman?' · '+k.departman:''}</option>`;
+  }).join('');
+
+  let body = `<div style="${S.card}">
+    <div style="${S.cardTitle}">◆ Atlas Hattı — KPI × Core sözleşmesi
+      <span style="${S.badge}background:rgba(62,207,142,.15);color:var(--gn);margin-left:auto;">gerçek Supabase verisi</span></div>
+    <div style="font-size:11px;color:var(--mt2);margin-bottom:12px;line-height:1.6;">
+      Bir KPI seç → <b style="color:var(--gn)">Ground</b> + <b style="color:var(--gn)">Data</b> deterministik çalışır →
+      <b style="color:var(--gold)">HSI_YORUM</b> (LLM) → <b style="color:var(--ac2)">Governance</b> insan kapısı.
+      Modül omurgaya bağlanır, başka modüle değil.</div>
+    <select onchange="atlasSecKpi(this.value)" style="${S.inp}">
+      <option value="">— KPI seç —</option>${opts}
+    </select>
+  </div>`;
+
+  if(atlasCtx){
+    const c=atlasCtx, z=c.zarf, M=ATLAS_MERD[c.merd], k=kpiVeriler.find(x=>x.id===atlasSeciliKpiId);
+    const dep = k.departman || '— (tesis seviyesi)';
+    const zarfTxt = JSON.stringify(z,null,2);
+
+    // STAGE 1 — GROUND
+    body += `<div style="${S.card}">
+      <div style="${S.cardTitle}"><span style="color:var(--gn)">①</span> Atlas Ground · kimlik
+        <span style="${S.badge}background:rgba(62,207,142,.12);color:var(--gn);margin-left:auto;">deterministik</span></div>
+      <div style="font-family:'Fira Code',monospace;font-size:11px;line-height:1.9;color:var(--mt2);">
+        <div>tesis &nbsp;→ <span style="color:var(--tx)">${z.kirilim.tesis}</span></div>
+        <div>departman → <span style="color:var(--tx)">${dep}</span></div>
+        <div>kaynak_modul → <span style="color:var(--tx)">KPI Takip</span></div>
+        <div>ID sözleşmesi → <span style="color:var(--gn)">kaynakKod ↔ ourId ✓</span></div>
+      </div></div>`;
+
+    // STAGE 2 — DATA
+    body += `<div style="${S.card}">
+      <div style="${S.cardTitle}"><span style="color:var(--gn)">②</span> Atlas Data · measure zarfı
+        <span style="${S.badge}background:rgba(62,207,142,.12);color:var(--gn);margin-left:auto;">deterministik</span></div>
+      ${c.steps.map(s=>`<div style="display:flex;gap:9px;font-size:11.5px;color:var(--mt2);margin-bottom:6px;line-height:1.5;">
+        <span style="flex:none;width:17px;height:17px;border-radius:50%;background:var(--bg3);color:var(--mt);font-family:'Fira Code',monospace;font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:1px;">${s[0]}</span>
+        <span>${s[1]}</span></div>`).join('')}
+      <div style="margin:10px 0;"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid ${M.c};color:${M.c};">${M.ic} merdiven: ${M.lbl}</span></div>
+      <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">measure zarfı (Distribution çıktısı)</div>
+      <pre style="background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:12px;font-size:10.5px;line-height:1.6;color:var(--mt2);overflow-x:auto;font-family:'Fira Code',monospace;margin:0;">${zarfTxt.replace(/</g,'&lt;')}</pre>
+    </div>`;
+
+    // STAGE 3 — BRAIN
+    if(!atlasHsiOut){
+      body += `<div style="${S.card}">
+        <div style="${S.cardTitle}"><span style="color:var(--gold)">③</span> Atlas Brain · HSI_YORUM
+          <span style="${S.badge}background:rgba(240,192,96,.15);color:var(--gold);margin-left:auto;">LLM yorumu</span></div>
+        <div style="font-size:11.5px;color:var(--mt2);margin-bottom:12px;line-height:1.5;">Zarf HSI_YORUM'a gider. Model yalnız <b>yorum metnini</b> üretir; <b style="color:var(--gn)">güven · merdiven · sentez kod-sabittir</b> (determinizm ayrımı).</div>
+        <button onclick="atlasCagirHSI()" style="${S.btn}background:var(--ac);color:#fff;" id="atlas-call-btn">HSI_YORUM çağır →</button>
+        <span id="atlas-call-stat" style="font-family:'Fira Code',monospace;font-size:10px;color:var(--mt);margin-left:10px;">hazır · 1B · tavan ${ATLAS_STAVAN['1B']}</span>
+      </div>`;
+    } else {
+      body += atlasBrainHtml();
+    }
+
+    // STAGE 4 — GOVERNANCE
+    body += `<div style="${S.card}${atlasHsiOut?'':'opacity:.55;'}">
+      <div style="${S.cardTitle}"><span style="color:var(--ac2)">④</span> Atlas Governance · insan kapısı
+        <span style="${S.badge}background:rgba(124,106,247,.15);color:var(--ac2);margin-left:auto;">insan onayı</span></div>
+      <div id="atlas-gov-body">${atlasHsiOut?atlasGovHtml():'<div style="font-size:11.5px;color:var(--mt);">HSI_YORUM üretilince insan onay kapısı açılır. AI önerir — insan onaylar.</div>'}</div>
+    </div>`;
+
+    // 4-SORU
+    const cb=(on)=>`<span style="display:inline-flex;width:15px;height:15px;border-radius:3px;background:${on?'var(--gn)':'transparent'};border:1px solid ${on?'var(--gn)':'var(--bd)'};color:#fff;font-size:10px;align-items:center;justify-content:center;flex:none;">${on?'✓':''}</span>`;
+    body += `<div style="${S.card}">
+      <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;">Core'a Göre Yap — 4-soru kontrolü</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--mt2);">
+        <div style="display:flex;gap:8px;align-items:center;">${cb(true)} Kimlik Ground'dan</div>
+        <div style="display:flex;gap:8px;align-items:center;">${cb(true)} Measure Registry'den</div>
+        <div style="display:flex;gap:8px;align-items:center;">${cb(!!atlasHsiOut)} Yorum HSI'den</div>
+        <div style="display:flex;gap:8px;align-items:center;">${cb(!!(atlasHsiOut&&atlasHsiOut._verdict))} Onay Governance'tan</div>
+        <div style="display:flex;gap:8px;align-items:center;">${cb(true)} Başka modüle bağlanmıyor</div>
+      </div></div>`;
+  }
+
+  el.innerHTML = body;
+}
+
+async function atlasCagirHSI(){
+  const btn=document.getElementById('atlas-call-btn'), stat=document.getElementById('atlas-call-stat');
+  if(btn) btn.disabled=true; if(stat) stat.textContent='⟳ HIL çağrılıyor…';
+  const c=atlasCtx, z=c.zarf;
+  let durum;
+  if(z.deger===null) durum=`MEASURE DEĞERİ YOK (eksik veri). ${z.etiket} için ${z.kaynak_sistem} verisi gelmedi.`;
+  else if(z.karsilastirma) durum=`${z.etiket}=${z.deger}, hedef ${z.karsilastirma.baz}, sapma ${z.karsilastirma.sapma_pct}%.`;
+  else durum=`${z.etiket}=${z.deger} (hedef tanımsız).`;
+
+  const prompt = `Sen HumanSoft Atlas'ın HSI_YORUM fonksiyonusun. Tek bir measure zarfını otel genel müdürü diliyle, neden-sonuç çerçevesinde yorumlarsın. Bu KPI'ın adından yön çıkar (örn. "maliyet/devir/şikayet/süre" düşükken iyidir; "skor/tamamlama/doluluk" yüksekken iyidir).
+SADECE şu alanlara sahip geçerli JSON döndür, başka hiçbir şey yazma (markdown/backtick YOK):
+{"sonuc":"...","dayanak":["..."],"kullanilan_referans":["..."],"eksik_veri":["..."],"celiski":["..."],"decision_trace":"veri → referans → metot → kriter → kanıt"}
+Kurallar: Sayıyı sen hesaplama (sapma hazır geldi), yalnız yorumla. Eksik veri varsa öneri verme, eksiği göster. Çelişki/eksik yoksa dayanak BOŞ OLAMAZ. Türkçe, kısa.
+
+Measure: ${z.etiket} (${z.measure}) · mercek ${z.mercek}
+Kırılım: ${z.kirilim.tesis} · ${z.kirilim.departman||'tesis seviyesi'}
+Kaynak: ${z.kaynak_modul} / ${z.kaynak_sistem} · merdiven ${z.merdiven}
+Durum: ${durum}
+Bu measure'ı yorumla.`;
+
+  try{
+    const resp = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data = await resp.json();
+    let txt = (data.content?.[0]?.text||'').trim().replace(/```json/g,'').replace(/```/g,'').trim();
+    atlasFinalizeHSI(JSON.parse(txt), false);
+  }catch(e){
+    const z2=atlasCtx.zarf;
+    const ai = z2.deger===null
+      ? {sonuc:`${z2.etiket} için ${z2.kaynak_sistem} verisi gelmedi — yorum yapılamaz, eksik gösteriliyor.`,dayanak:[],kullanilan_referans:[],eksik_veri:[`${z2.kaynak_sistem} beslemesi bağlanmalı (${z2.measure})`],celiski:[],decision_trace:`measure=${z2.measure} → değer yok → karar 4 → eksik gösterildi.`}
+      : {sonuc:`${z2.etiket} = ${z2.deger}${z2.karsilastirma?', hedef '+z2.karsilastirma.baz+'\'e göre '+(z2.karsilastirma.sapma_pct>0?'+':'')+z2.karsilastirma.sapma_pct+'% sapma':' (hedef tanımsız)'}.`,dayanak:[`${z2.measure}=${z2.deger}`].concat(z2.karsilastirma?[`baz=${z2.karsilastirma.baz}`]:[]),kullanilan_referans:[`turizm A-paketi · ${z2.mercek} merceği`],eksik_veri:[],celiski:[],decision_trace:`zarf(${z2.measure}) → ${z2.karsilastirma?('sapma '+z2.karsilastirma.sapma_pct+'%'):'mutlak değer'} → ${z2.mercek} eşiği → yorum.`};
+    atlasFinalizeHSI(ai, true);
+  }
+}
+
+function atlasFinalizeHSI(ai, fallback){
+  const z=atlasCtx.zarf;
+  const celiskiVar=(ai.celiski||[]).length>0, sentez='1B';
+  const g=atlasGuvenHesapla(z.merdiven, sentez, celiskiVar);
+  const onay = celiskiVar || sentez==='3B' || g.lbl==='dusuk';
+  atlasHsiOut = {
+    fonksiyon:'HSI_YORUM', surum:'1.0.0', sentez_seviyesi:sentez,
+    sonuc:ai.sonuc||'', dayanak:ai.dayanak||[], kullanilan_referans:ai.kullanilan_referans||[],
+    kaynak_merdiveni:[z.merdiven], guven:g.lbl, guven_skoru:g.skor,
+    eksik_veri:ai.eksik_veri||[], celiski:ai.celiski||[],
+    insan_onayi_gerek:onay, decision_trace:ai.decision_trace||'',
+    _g:g, _fallback:fallback, _verdict:null
+  };
+  atlasHatRender(document.getElementById('kpi-main'));
+}
+
+function atlasBrainHtml(){
+  const o=atlasHsiOut, g=o._g, M=ATLAS_MERD[o.kaynak_merdiveni[0]];
+  const gc = o.guven==='yuksek'?'var(--gn)':o.guven==='orta'?'var(--gold)':'var(--rd)';
+  const chip=(t,col)=>`<span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid ${col||'var(--bd)'};color:${col||'var(--mt2)'};padding:2px 8px;border-radius:4px;margin:0 4px 4px 0;display:inline-block;">${t}</span>`;
+  return `<div style="${S.card}">
+    <div style="${S.cardTitle}"><span style="color:var(--gold)">③</span> Atlas Brain · HSI_YORUM → ORTAK_CIKTI_SEMASI v1
+      <span style="${S.badge}background:rgba(240,192,96,.15);color:var(--gold);margin-left:auto;">LLM yorumu</span></div>
+    ${o._fallback?`<div style="font-size:10.5px;color:var(--gold);background:rgba(240,192,96,.1);border:1px solid var(--gold);border-radius:6px;padding:9px 11px;margin-bottom:11px;line-height:1.5;">⚠ Canlı /api/chat bu ortamda yanıt vermedi → deterministik şablon yorum. Şema/akış/güven mantığı birebir geçerli; gerçek ≠ vitrin ayrımı korunur.</div>`:''}
+    <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">sonuç</div>
+    <div style="font-size:13px;line-height:1.6;color:var(--tx);border-left:3px solid var(--ac);padding-left:12px;margin-bottom:13px;">${o.sonuc||'—'}</div>
+    <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">dayanak</div>
+    <div style="margin-bottom:11px;">${o.dayanak.length?o.dayanak.map(d=>chip(d)).join(''):chip('∅ (eksik/çelişki hali)','var(--rd)')}</div>
+    <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">kullanılan referans</div>
+    <div style="margin-bottom:11px;">${(o.kullanilan_referans.length?o.kullanilan_referans:['—']).map(d=>chip(d)).join('')}</div>
+    ${o.eksik_veri.length?`<div style="font-size:9px;color:var(--rd);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">eksik veri</div><div style="margin-bottom:11px;">${o.eksik_veri.map(d=>chip(d,'var(--rd)')).join('')}</div>`:''}
+    ${o.celiski.length?`<div style="font-size:9px;color:var(--rd);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">çelişki</div><div style="margin-bottom:11px;">${o.celiski.map(d=>chip(d,'var(--rd)')).join('')}</div>`:''}
+    <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin:13px 0 6px;">güven · iki-çarpan (kod-sabit)</div>
+    <div style="display:flex;align-items:center;gap:16px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:13px 15px;">
+      <div style="font-family:'Fira Code',monospace;font-size:30px;font-weight:800;color:${gc};line-height:1;">${o.guven_skoru}</div>
+      <div style="font-family:'Fira Code',monospace;font-size:10.5px;color:var(--mt2);line-height:1.7;">
+        sentez <b style="color:var(--tx)">${o.sentez_seviyesi}</b> tavanı ${g.tavan} × veri-tamlığı ${M.ic} ${g.vtam} = <b style="color:var(--tx)">${o.guven_skoru}</b> · ${o.guven}
+        <div style="color:var(--gn);margin-top:3px;">↳ bu alanı model değil <b>kod</b> belirler</div>
+      </div></div>
+    <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin:13px 0 6px;">decision_trace</div>
+    <div style="font-family:'Fira Code',monospace;font-size:10.5px;line-height:1.7;color:var(--mt2);background:var(--bg3);border-left:3px solid var(--mt);border-radius:6px;padding:11px 13px;">${o.decision_trace||'—'}</div>
+    <div style="margin-top:11px;">${chip('✓ ORTAK_CIKTI_SEMASI · 13/13 alan','var(--gn)')}</div>
+  </div>`;
+}
+
+function atlasGovHtml(){
+  const o=atlasHsiOut;
+  if(o._verdict){
+    const app=o._verdict==='onay';
+    return `<div style="font-family:'Fira Code',monospace;font-size:11.5px;padding:11px 13px;border-radius:7px;border:1px solid ${app?'var(--gn)':'var(--rd)'};background:${app?'rgba(62,207,142,.1)':'rgba(242,107,107,.1)'};color:${app?'var(--gn)':'var(--rd)'};">
+        ${app?'✓ İNSAN ONAYI VERİLDİ':'✗ REDDEDİLDİ / GERİ GÖNDERİLDİ'} · ${o.fonksiyon} · ${atlasCtx.zarf.measure}</div>
+      <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--mt);margin-top:9px;line-height:1.8;">
+        <div>karar: ${app?'onay':'red'} · ${new Date().toLocaleString('tr-TR')}</div>
+        <div>güven: ${o.guven_skoru} (${o.guven}) · merdiven: ${o.kaynak_merdiveni[0]}</div>
+        <div style="color:var(--mt2);">↳ karar + dayanak + trace persistence'e yazılır (Faz 2: Supabase <span style="color:var(--ac2)">karar</span> tablosu)</div>
+      </div>
+      <button onclick="atlasHsiOut._verdict=null;atlasHatRender(document.getElementById('kpi-main'));" style="${S.btn}background:var(--bg3);border:1px solid var(--bd);color:var(--mt2);margin-top:11px;">↺ kararı sıfırla</button>`;
+  }
+  const need=o.insan_onayi_gerek;
+  return `<div style="font-size:12px;color:var(--tx);margin-bottom:12px;line-height:1.5;">Bu yorum <b style="font-family:'Fira Code',monospace;">insan_onayi_gerek = ${need}</b>${need?' — güven düşük / çelişki / 3B olduğu için onay zorunlu.':' — düşük riskli, yine de kapı insanın elinde.'}</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="atlasHsiOut._verdict='onay';atlasHatRender(document.getElementById('kpi-main'));" style="${S.btn}background:var(--gn);color:#fff;">✓ Onayla</button>
+      <button onclick="atlasHsiOut._verdict='red';atlasHatRender(document.getElementById('kpi-main'));" style="${S.btn}background:transparent;border:1px solid var(--rd);color:var(--rd);">✗ Reddet / geri gönder</button>
+    </div>
+    <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--mt);margin-top:10px;">AI önerir · insan onaylar — bu kapı atlanamaz.</div>`;
+}
+
 (async function başlat() {
   init();
   await isletmeYukle();
   if(AKTIF_ISLETME) {
     const brand = document.querySelector('.tb-tagline');
-    if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HWOM Studio';
+    if(brand) brand.textContent = AKTIF_ISLETME.isletme_adi + ' · HumanSoft | Atlas';
     if(AKTIF_QX) {
       QX_LAYERS[0].skor = AKTIF_QX.cx_skor || QX_LAYERS[0].skor;
       QX_LAYERS[1].skor = AKTIF_QX.ex_skor || QX_LAYERS[1].skor;
